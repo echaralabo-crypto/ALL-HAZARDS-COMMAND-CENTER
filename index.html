@@ -1,0 +1,1603 @@
+<!doctype html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#061423"><title>OROPOS OPS C3 — ALL HAZARDS COMMAND CENTER — FINAL</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#061423;--p:#14283e;--p2:#0b1b2d;--cyan:#14c5dc;--blue:#258ff0;
+  --red:#e94d5d;--yellow:#e5b934;--green:#2dc88b;--muted:#a9bdce;--line:#294965;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#f3f7fb;font:13px Arial,sans-serif;padding-bottom:64px}
+header{padding:9px 10px 6px;background:#07101c;border-bottom:1px solid #23435c;position:sticky;top:0;z-index:20}
+header .toprow{display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:14px;margin:0;color:#8fe7ff}
+header .clock{font-size:10px;color:var(--muted)}
+.connbar{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.pill{font-size:9px;padding:2px 6px;border-radius:8px;background:#182d42;border:1px solid #3b5870;display:flex;align-items:center;gap:3px}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot.g{background:var(--green)}.dot.y{background:var(--yellow)}.dot.r{background:var(--red)}.dot.gray{background:#556}
+.subnav{display:flex;gap:4px;overflow:auto;position:sticky;top:47px;z-index:15;padding:6px;background:#0a1a2b;border-bottom:1px solid #1c3348}
+.subnav button{white-space:nowrap;background:#182d42;color:#fff;border:1px solid #3b5870;border-radius:5px;padding:7px 9px;font-size:11px;flex:none}
+.subnav button.on{background:var(--cyan);color:#062033;border-color:var(--cyan)}
+.wrap{max-width:900px;margin:auto;padding:8px}
+.page{display:none}
+.page.on{display:block}
+.panel,.card{background:var(--p);border:1px solid var(--line);border-radius:7px;padding:9px;margin-bottom:8px}
+.card{border-left:3px solid #2b9bea}
+.card.strong{border-left-color:var(--red)}
+.card.medium{border-left-color:var(--yellow)}
+.card.done{opacity:.6;border-left-color:var(--green)}
+h2{font-size:15px;margin:0 0 8px;color:#cfe9f5}
+h3{font-size:13px;margin:6px 0}
+label{display:block;color:var(--muted);font-size:11px;margin:6px 0 3px}
+input,select,textarea{width:100%;background:var(--p2);color:#fff;border:1px solid #36536b;border-radius:5px;padding:9px;font:inherit}
+textarea{min-height:60px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.btns{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+button{background:#29465e;color:#fff;border:0;border-radius:5px;padding:8px 10px;font:inherit;font-size:11px;cursor:pointer}
+button.main{background:linear-gradient(90deg,#268ef2,#10c7d8)}
+button.good{background:#176f52}
+button.bad{background:#9b2f3d}
+button.ghost{background:transparent;border:1px solid #3b5870}
+.muted{color:var(--muted);font-size:11px}
+.tag{display:inline-block;background:#244560;border-radius:10px;padding:3px 7px;margin:0 3px 3px 0;font-size:10px}
+.tag.red{background:#8d3040}
+.tag.yellow{background:#80651a}
+.tag.green{background:#1a6b52}
+.status{padding:9px;border-radius:5px;background:#0b2033;border:1px solid #315875;margin-top:8px;line-height:1.5}
+.day{border-top:1px solid #315875;padding:9px 0}
+.day:first-child{border-top:0}
+.toast{display:none;position:fixed;bottom:70px;left:10px;right:10px;background:#16486a;border:1px solid #62b8ed;padding:10px;border-radius:6px;z-index:40}
+.bottomnav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#07101c;border-top:1px solid #23435c;z-index:30}
+.bottomnav button{flex:1;background:transparent;border:0;border-radius:0;padding:8px 2px;font-size:9px;color:#9fb4c6;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bottomnav button .ic{font-size:16px}
+.bottomnav button.on{color:var(--cyan)}
+.gaugewrap{background:#0b2033;border-radius:5px;height:8px;overflow:hidden;margin:5px 0}
+.gauge{height:100%;border-radius:5px}
+.risklevel-LOW{color:var(--green)}
+.risklevel-MODERATE{color:var(--yellow)}
+.risklevel-HIGH{color:#f0862f}
+.risklevel-EXTREME{color:var(--red)}
+.kv{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #26405a;font-size:11px}
+.kv:last-child{border-bottom:0}
+.hidden{display:none !important}
+#lockScreen{position:fixed;inset:0;background:#061423;z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+#lockScreen input{width:160px;text-align:center;font-size:20px;letter-spacing:6px}
+::-webkit-scrollbar{height:0;width:0}
+@media(max-width:500px){.grid,.grid3{grid-template-columns:1fr 1fr}}
+.reason{margin-top:8px;padding:8px 10px;border-left:3px solid #16c1b7;background:rgba(22,193,183,.08);font-size:13px;line-height:1.4}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+</style></head><body>
+<div id="lockScreen">
+  <div style="color:#8fe7ff;font-size:16px">🔒 OROPOS OPS C3</div>
+  <input id="pinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN">
+  <button class="main" onclick="tryUnlock()">ΞΕΚΛΕΙΔΩΜΑ</button>
+  <div id="pinMsg" class="muted"></div>
+</div>
+
+<header>
+  <div class="toprow">
+    <div>
+      <h1>OROPOS OPS C3 — ALL HAZARDS <span class="tag green">FINAL · REAL DATA</span></h1>
+      <div class="muted" style="font-size:10px">Κέντρο Επιχειρήσεων · Πολιτική Προστασία</div>
+    </div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+  <div class="connbar" id="connbar"></div>
+</header>
+
+<nav class="subnav" id="subnav"></nav>
+
+<main class="wrap" id="main">
+
+<section id="home" class="page">
+  <div class="panel">
+    <h2>🏠 Επιχειρησιακή Εικόνα</h2>
+    <div id="homeWeatherNow" class="status">Δεν έχουν φορτωθεί δεδομένα καιρού.</div>
+  </div>
+  <div class="panel">
+    <h2>Ενεργοί Κίνδυνοι</h2>
+    <div id="homeRisks" class="muted">Δεν έχει υπολογιστεί ο δείκτης κινδύνου. Πήγαινε στον Καιρό και φόρτωσε πρόγνωση.</div>
+  </div>
+  <div class="panel">
+    <h2>Ενεργά Συμβάντα</h2>
+    <div id="homeIncidents" class="muted">—</div>
+  </div>
+  <div class="panel">
+    <h2>Συνδεσιμότητα</h2>
+    <div id="homeConn" class="muted">—</div>
+  </div>
+</section>
+
+<section id="risk" class="page">
+  <div class="panel">
+    <h2>⚠️ Risk Center</h2>
+    <div class="muted">REAL-DATA MODE — Δεν χρησιμοποιούνται demo/mock/fake καιρικά ή επιχειρησιακά δεδομένα. Οι υπολογισμοί κινδύνου είναι ενδεικτικοί και δεν αποτελούν επίσημη κρατική προειδοποίηση (ΓΓΠΠ/112).</div>
+    <div class="btns"><button class="main" onclick="computeAllRisk(true)">ΕΠΑΝΥΠΟΛΟΓΙΣΜΟΣ</button></div>
+  </div>
+  <div id="riskList"></div>
+</section>
+
+<section id="alerts" class="page">
+  <div class="panel">
+    <h2>🚨 Alert Center</h2>
+    <div class="btns"><button onclick="rebuildAlerts()">ΑΝΑΝΕΩΣΗ</button><button class="bad" onclick="clearResolvedAlerts()">ΚΑΘΑΡΙΣΜΟΣ ΕΠΙΛΥΜΕΝΩΝ</button></div>
+  </div>
+  <div id="alertsList"></div>
+</section>
+
+<section id="weather" class="page">
+  <div class="panel">
+    <h2>🌦️ Καιρός — ALL HAZARDS WEATHER INTELLIGENCE</h2>
+    <label>Περιοχή</label>
+    <select id="region"></select>
+    <div class="btns">
+      <button class="main" onclick="loadWeather()">☁ ΦΟΡΤΩΣΗ ΠΡΟΓΝΩΣΗΣ</button>
+      <button onclick="weatherFromGPS()">📍 GPS → ΚΑΙΡΟΣ ΣΤΟ ΣΤΙΓΜΑ ΜΟΥ</button>
+      <button onclick="loadWeather(true)">🏛️ AUTO CHECK ΔΗΜΟΥ ΩΡΩΠΟΥ</button>
+    </div>
+    <label>Ορίζοντας πρόγνωσης</label>
+    <select id="horizon">
+      <option value="1">24 ώρες</option>
+      <option value="2">48 ώρες</option>
+      <option value="3">72 ώρες</option>
+      <option value="7" selected>7 ημέρες</option>
+      <option value="10">10 ημέρες</option>
+      <option value="15">15 ημέρες</option>
+    </select>
+    <label>Αυτόματο update</label>
+    <select id="timer">
+      <option value="0">Χειροκίνητη</option>
+      <option value="5">Κάθε 5 λεπτά</option>
+      <option value="10">Κάθε 10 λεπτά</option>
+      <option value="30">Κάθε 30 λεπτά</option>
+    </select>
+    <div id="weatherStatus" class="status">LIVE DATA ONLY — φόρτωσε πρόγνωση ή χρησιμοποίησε GPS.</div><div id="autoScanStatus" class="muted">Auto-check: —</div>
+  </div>
+  <div class="panel">
+    <h2>Τρέχουσες συνθήκες</h2><div class="btns"><button onclick="weatherFromGPS()">📍 GPS</button><button onclick="go('weather')">🔎 Χειροκίνητη περιοχή</button></div>
+    <div id="weatherNow" class="muted">—</div>
+  </div>
+  <div class="panel">
+    <h2>Ωριαία πρόγνωση (επόμενες ώρες)</h2>
+    <div id="hourlyList" class="muted">—</div>
+  </div>
+  <div class="panel">
+    <h2>Ημερήσια πρόγνωση</h2>
+    <div id="weatherList" class="muted">Δεν έχουν φορτωθεί οι ημέρες.</div>
+  </div>
+  <div class="panel">
+    <h2>🌐 Πολυμοντελικό Κέντρο</h2>
+    <div class="muted">Σύγκριση ανεξάρτητων ανοικτών model feeds. Οι τιμές σημειώνονται ως MODEL DATA και δεν είναι επίσημες παρατηρήσεις.</div>
+    <div id="modelMatrix" class="grid2"></div>
+  </div>
+</section>
+
+<section id="quakes" class="page">
+  <div class="panel">
+    <h2>🌎 Live Σεισμοί (USGS)</h2>
+    <div class="grid3">
+      <div><label>Latitude</label><input id="qlat" value="38.30"></div>
+      <div><label>Longitude</label><input id="qlon" value="23.75"></div>
+      <div><label>Ακτίνα km</label><input id="qr" value="400"></div>
+      <div><label>Μέγεθος από</label><input id="qmin" value="0"></div>
+      <div><label>Μέγεθος έως</label><input id="qmax" value="9.9"></div>
+      <div><label>Περίοδος</label>
+        <select id="qh">
+          <option value="24">24 ώρες</option>
+          <option value="168" selected>7 ημέρες</option>
+        </select>
+      </div>
+    </div>
+    <label>Όριο ειδοποίησης (μέγεθος)</label>
+    <input id="qAlertThresh" value="4.5">
+    <div class="btns">
+      <button class="main" onclick="getQuakes()">ΑΝΑΖΗΤΗΣΗ ΣΕΙΣΜΩΝ</button>
+      <button onclick="toggleQuakeAuto()"><span id="qAutoLabel">▶ ΑΥΤΟΜΑΤΗ ΑΝΑΝΕΩΣΗ (5')</span></button>
+    </div>
+    <p id="quakeInfo" class="muted">Δεν έγινε αναζήτηση.</p>
+  </div>
+  <div id="quakeList"></div>
+</section>
+
+<section id="events" class="page">
+  <div class="panel">
+    <h2>🚒 Διαχείριση Συμβάντων</h2>
+    <button class="main" onclick="newEvent()">＋ ΝΕΟ ΣΥΜΒΑΝ</button>
+  </div>
+  <div id="eventsList"></div>
+</section>
+
+<section id="editor" class="page">
+  <div class="panel">
+    <h2 id="editorTitle">Νέο συμβάν</h2>
+    <input id="id" type="hidden">
+    <label>Τύπος</label>
+    <select id="type">
+      <option>🔥 Πυρκαγιά</option><option>🌧️ Πλημμύρα</option><option>❄️ Χιονόπτωση</option>
+      <option>⛈️ Καταιγίδα</option><option>⚠️ Κακοκαιρία</option><option>🌎 Σεισμός</option><option>Άλλο</option>
+    </select>
+    <label>Κατάσταση</label>
+    <select id="estatus">
+      <option>NEW</option><option>ASSIGNED</option><option>EN ROUTE</option><option>ON SCENE</option>
+      <option>OPERATING</option><option>UNDER CONTROL</option><option>COMPLETED</option>
+    </select>
+    <label>Προτεραιότητα</label>
+    <select id="epriority"><option>Χαμηλή</option><option selected>Κανονική</option><option>Υψηλή</option><option>Κρίσιμη</option></select>
+    <label>Περιοχή</label>
+    <input id="area">
+    <div class="grid">
+      <div><label>Από</label><input id="start" type="datetime-local"></div>
+      <div><label>Έως</label><input id="end" type="datetime-local"></div>
+    </div>
+    <label>Συντεταγμένες συμβάντος</label>
+    <div class="grid">
+      <input id="lat" placeholder="Latitude"><input id="lon" placeholder="Longitude">
+    </div>
+    <div class="btns">
+      <button onclick="gps('lat','lon')">📍 ΛΗΨΗ ΘΕΣΗΣ</button>
+      <button onclick="mapPoint()">🧭 ΧΑΡΤΗΣ</button>
+    </div>
+    <label>Ένταση</label>
+    <select id="intensity"><option>Ασθενές</option><option>Μέτριο</option><option>Ισχυρό</option><option>Πολύ ισχυρό</option><option>Ακραίο</option></select>
+    <label>Περιγραφή</label><textarea id="description"></textarea>
+    <label>Οδηγίες</label><textarea id="instructions"></textarea>
+    <label>Πηγή</label><input id="source">
+    <label>Υπεύθυνος</label><input id="responsible">
+    <label>Ανάθεση οχήματος</label><select id="eassignVehicle"><option value="">—</option></select>
+    <label>Σημειώσεις</label><textarea id="enotes"></textarea>
+    <div class="btns">
+      <button class="main" onclick="saveEvent()">ΑΠΟΘΗΚΕΥΣΗ</button>
+      <button onclick="go('events')">ΑΚΥΡΩΣΗ</button>
+    </div>
+  </div>
+</section>
+
+<section id="forces" class="page">
+  <div class="panel">
+    <h2>👥 Δυνάμεις / Πληρώματα</h2>
+    <label>Όνομα</label><input id="fname">
+    <div class="grid">
+      <div><label>Ρόλος</label><input id="frole" placeholder="π.χ. Αρχηγός ομάδας"></div>
+      <div><label>Βάρδια</label><input id="fshift" placeholder="π.χ. 08:00–20:00"></div>
+    </div>
+    <div class="grid">
+      <div><label>Επικοινωνία</label><input id="fcontact"></div>
+      <div><label>Κατάσταση</label><select id="fstatus"><option>AVAILABLE</option><option>BUSY</option><option>UNAVAILABLE</option></select></div>
+    </div>
+    <div class="btns"><button class="main" onclick="addForce()">＋ ΠΡΟΣΘΗΚΗ</button></div>
+  </div>
+  <div id="forcesList"></div>
+</section>
+
+<section id="vehicles" class="page">
+  <div class="panel">
+    <h2>🚒 Οχήματα</h2>
+    <div class="grid">
+      <div><label>ID / Διακριτικό</label><input id="vid"></div>
+      <div><label>Τύπος</label><input id="vtype" placeholder="π.χ. Υδροφόρα"></div>
+    </div>
+    <div class="grid">
+      <div><label>Πλήρωμα</label><input id="vcrew"></div>
+      <div><label>Κατάσταση</label><select id="vstatus"><option>AVAILABLE</option><option>EN ROUTE</option><option>ON SCENE</option><option>OUT OF SERVICE</option></select></div>
+    </div>
+    <label>Καύσιμο (%)</label><input id="vfuel" type="number" min="0" max="100" value="100">
+    <label>Εξοπλισμός</label><textarea id="vequip"></textarea>
+    <div class="btns"><button class="main" onclick="addVehicle()">＋ ΠΡΟΣΘΗΚΗ</button></div>
+  </div>
+  <div id="vehiclesList"></div>
+</section>
+
+<section id="inventory" class="page">
+  <div class="panel">
+    <h2>📦 Εξοπλισμός / Υλικά</h2>
+    <div class="grid">
+      <div><label>Είδος</label><input id="itemName" placeholder="π.χ. Αντλία, Ασύρματος"></div>
+      <div><label>Κατηγορία</label><input id="itemCat" placeholder="π.χ. Πυρόσβεση"></div>
+    </div>
+    <div class="grid3">
+      <div><label>Ποσότητα</label><input id="itemQty" type="number" value="1"></div>
+      <div><label>Ελάχιστο</label><input id="itemMin" type="number" value="1"></div>
+      <div><label>Κατάσταση</label><select id="itemStatus"><option>AVAILABLE</option><option>LOW STOCK</option><option>OUT OF SERVICE</option></select></div>
+    </div>
+    <div class="btns"><button class="main" onclick="addItem()">＋ ΠΡΟΣΘΗΚΗ</button></div>
+  </div>
+  <div id="inventoryList"></div>
+</section>
+
+<section id="map" class="page">
+  <div class="panel">
+    <h2>🗺️ Common Operating Picture</h2>
+    <div class="btns">
+      <button onclick="setLayer('osm')">OpenStreetMap</button>
+      <button onclick="setLayer('sat')">Satellite</button>
+      <button onclick="setLayer('topo')">Terrain</button>
+      <button onclick="setLayer('rain')">Rain Radar</button>
+      <button class="main" onclick="centerOropos()">CENTER ON OROPOS</button>
+      <button onclick="centerGPS()">📍 GPS</button>
+    </div>
+    <div class="btns">
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;margin:0"><input type="checkbox" id="lyEvents" checked style="width:auto" onchange="renderMapMarkers()"> Συμβάντα</label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;margin:0"><input type="checkbox" id="lyVehicles" checked style="width:auto" onchange="renderMapMarkers()"> Οχήματα</label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;margin:0"><input type="checkbox" id="lyQuakes" style="width:auto" onchange="renderMapMarkers()"> Σεισμοί</label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;margin:0"><input type="checkbox" id="lyFires" checked style="width:auto" onchange="renderMapMarkers()"> NASA FIRMS</label>
+    </div>
+    <div id="leafletMap" style="width:100%;height:400px;border-radius:6px;margin-top:8px;background:#0b1b2d"></div>
+    <div id="mapStatus" class="muted" style="margin-top:6px">Φόρτωση χάρτη…</div>
+  </div>
+</section>
+
+<section id="sources" class="page">
+  <div class="panel">
+    <h2>📡 LIVE SOURCES — REAL DATA</h2>
+    <div class="muted">Η εφαρμογή χρησιμοποιεί μόνο δεδομένα που επέστρεψαν από την αντίστοιχη πηγή. Όταν μια πηγή αποτύχει εμφανίζεται UNAVAILABLE — ποτέ πλασματική τιμή.</div>
+    <div id="sourceStatus" class="grid2"></div>
+    <div class="btns"><button class="main" onclick="refreshAllSources()">🔄 REFRESH ALL SOURCES</button><button onclick="requestNotifications()">🔔 ΕΝΕΡΓΟΠΟΙΗΣΗ NOTIFICATIONS</button></div>
+  </div>
+  <div class="panel">
+    <h2>🔥 Δορυφορικές ανιχνεύσεις πυρκαγιάς</h2>
+    <div id="fireFeed" class="muted">NASA FIRMS: —</div>
+    <div class="muted">Οι δορυφορικές ανιχνεύσεις είναι hotspots και όχι επιβεβαιωμένα συμβάντα Πυροσβεστικής. Για αυτό το λόγο δεν δημιουργούνται αυτόματα «επιβεβαιωμένα» συμβάντα.</div>
+  </div>
+  <div class="panel">
+    <h2>⚠️ Επίσημες ενημερώσεις</h2>
+    <div id="officialFeed" class="muted">Υπουργείο Κλιματικής Κρίσης & Πολιτικής Προστασίας RSS: —</div>
+  </div>
+  <div class="panel">
+    <h2>🏛️ Κάλυψη Δήμου Ωρωπού</h2>
+    <div id="municipalityCoverage" class="muted">—</div>
+  </div>
+</section>
+
+<section id="settings" class="page">
+  <div class="panel">
+    <h2>⚙️ Γενικά</h2>
+    <label>Προεπιλεγμένη περιοχή</label><select id="setDefaultRegion"></select>
+    <label>Μονάδες</label>
+    <select id="setUnits"><option value="metric">Μετρικό (°C, km/h, mm)</option><option value="imperial">Αυτοκρατορικό (°F, mph, in)</option></select>
+    <div class="btns"><button class="main" onclick="saveGeneral()">ΑΠΟΘΗΚΕΥΣΗ</button></div>
+  </div>
+  <div class="panel">
+    <h2>GPS</h2>
+    <label>Ακρίβεια</label><select id="setGpsAcc"><option value="high">Υψηλή</option><option value="low">Χαμηλή (εξοικονόμηση μπαταρίας)</option></select>
+    <div id="lastKnownLoc" class="muted">Τελευταία γνωστή θέση: —</div>
+    <div class="btns"><button onclick="gps('setLat','setLon',true)">📍 ΕΝΗΜΕΡΩΣΗ ΘΕΣΗΣ</button></div>
+    <input id="setLat" type="hidden"><input id="setLon" type="hidden">
+  </div>
+  <div class="panel">
+    <h2>✈️ Telegram — REAL BOT API</h2>
+    <div class="muted">Χωρίς demo token / χωρίς demo Chat ID. Συμπλήρωσε τα δικά σου στοιχεία. Η εφαρμογή χρησιμοποιεί το επίσημο Bot API <b>sendMessage</b>.</div>
+    <label>Bot Token</label><input id="botToken" type="password" autocomplete="off" placeholder="123456:ABC...">
+    <label>Chat ID / @channel</label><input id="chat" placeholder="π.χ. -100... ή @channel">
+    <label>Προαιρετικό backend relay</label><input id="endpoint" placeholder="Αν χρησιμοποιείς δικό σου server relay">
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="tgAuto" style="width:auto"> Αυτόματη αποστολή νέων συμβάντων</label>
+    <div class="btns"><button class="main" onclick="saveSettings()">ΑΠΟΘΗΚΕΥΣΗ</button><button onclick="testTelegram()">🧪 TEST TELEGRAM</button></div>
+    <div id="tgStatus" class="muted">Telegram: NOT CONFIGURED</div>
+  </div>
+  <div class="panel">
+    <h2>Χάρτης / Εξωτερικά API</h2>
+    <label>NASA FIRMS MAP_KEY (προαιρετικό — εστίες πυρκαγιών)</label>
+    <input id="firmsKey" placeholder="Χωρίς κλειδί: NOT CONFIGURED">
+    <div class="btns"><button class="main" onclick="saveApiKeys()">ΑΠΟΘΗΚΕΥΣΗ</button></div>
+  </div>
+  <div class="panel">
+    <h2>🌐 Weather Data Sources / API Vault</h2>
+    <div class="muted">Open-Meteo παραμένει η βασική δωρεάν πηγή. Προαιρετικά πρόσθεσε OpenWeather API key για δεύτερη ανεξάρτητη πηγή και cross-check. Το κλειδί αποθηκεύεται τοπικά στη συσκευή.</div>
+    <label>OpenWeather API Key</label>
+    <input id="openWeatherKey" type="password" autocomplete="off" placeholder="Βάλε το API key σου">
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="openWeatherEnabled" style="width:auto"> Ενεργοποίηση OpenWeather supplementary source</label>
+    <label>Model strategy</label>
+    <select id="modelMode">
+      <option value="multi">MULTI-MODEL — Best Match + ECMWF + ICON + GFS + Météo-France</option>
+      <option value="openmeteo">OPEN-METEO AGGREGATED / BEST MATCH</option>
+    </select>
+    <div class="btns"><button class="main" onclick="saveWeatherApiSettings()">ΑΠΟΘΗΚΕΥΣΗ WEATHER SOURCES</button><button onclick="testOpenWeather()">TEST OPENWEATHER</button></div>
+    <div id="owStatus" class="muted">OpenWeather: —</div>
+  </div>
+  <div class="panel">
+    <h2>🤖 AUTO CHECK / TELEGRAM ALERT ENGINE</h2>
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="autoScan" style="width:auto"> Αυτόματος έλεγχος Δήμου Ωρωπού</label>
+    <label>Συχνότητα ελέγχου</label><select id="autoScanMinutes"><option value="10">10 λεπτά</option><option value="15">15 λεπτά</option><option value="30">30 λεπτά</option></select>
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="autoIncidentTelegram" style="width:auto"> Αυτόματο Telegram για νέες προειδοποιήσεις</label>
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="sourceTelegram" style="width:auto"> Telegram για νέα live fire/official alerts</label>
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="notificationEnabled" style="width:auto"> Browser notifications</label>
+    <div class="muted">Προειδοποιήσεις πρόγνωσης: <b>24h · 12h · 6h · 3h · 1h · 30min</b> πριν από το υπολογισμένο παράθυρο κινδύνου. Αποστολή μόνο μία φορά ανά περιοχή/φαινόμενο/χρονικό ορίζοντα.</div>
+    <div class="btns"><button class="main" onclick="saveAutoSettings()">ΑΠΟΘΗΚΕΥΣΗ AUTO ENGINE</button><button onclick="runAutoScan(true)">⚡ ΕΛΕΓΧΟΣ ΤΩΡΑ</button></div>
+  </div>
+  <div class="panel">
+    <h2>Ασφάλεια</h2>
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="pinEnabled" style="width:auto" onchange="togglePinUI()"> Ενεργοποίηση κλειδώματος με PIN</label>
+    <div id="pinSetupWrap" class="hidden">
+      <label>Ορισμός PIN</label><input id="newPin" type="password" inputmode="numeric" maxlength="8">
+      <div class="btns"><button class="main" onclick="setPin()">ΑΠΟΘΗΚΕΥΣΗ PIN</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="bluetooth" class="page">
+  <div class="panel">
+    <h2>🔵 Bluetooth Devices</h2>
+    <div class="muted">Προαιρετική λειτουργία. Η εφαρμογή λειτουργεί κανονικά χωρίς Bluetooth. Απαιτεί browser με υποστήριξη Web Bluetooth (π.χ. Chrome Android) και HTTPS.</div>
+    <div id="btSupport" class="status">Έλεγχος υποστήριξης…</div>
+    <div class="btns"><button class="main" onclick="btScan()">🔍 SCAN</button></div>
+  </div>
+  <div class="panel">
+    <h2>Συνδεδεμένες συσκευές</h2>
+    <div id="btConnected" class="muted">Καμία συσκευή συνδεδεμένη.</div>
+  </div>
+</section>
+
+<section id="connectivity" class="page">
+  <div class="panel">
+    <h2>📡 Connectivity Center</h2>
+    <div id="connDetail" class="muted">—</div>
+    <div class="btns"><button class="main" onclick="refreshConnectivity()">ΕΛΕΓΧΟΣ ΤΩΡΑ</button></div>
+  </div>
+  <div class="panel">
+    <h2>Offline ουρά συγχρονισμού</h2>
+    <div id="syncQueue" class="muted">Καμία εκκρεμότητα.</div>
+  </div>
+</section>
+
+<section id="data" class="page">
+  <div class="panel">
+    <h2>💾 Δεδομένα</h2>
+    <div class="btns">
+      <button class="main" onclick="exportData('json')">EXPORT JSON</button>
+      <button onclick="exportData('csv')">EXPORT CSV (συμβάντα)</button>
+    </div>
+    <label>Εισαγωγή (import) από αρχείο JSON</label>
+    <input type="file" id="importFile" accept="application/json">
+    <div class="btns"><button class="main" onclick="importData()">IMPORT</button></div>
+    <div class="btns"><button class="bad" onclick="clearCache()">ΕΚΚΑΘΑΡΙΣΗ ΤΟΠΙΚΩΝ ΔΕΔΟΜΕΝΩΝ</button></div>
+  </div>
+</section>
+
+<section id="logbook" class="page">
+  <div class="panel">
+    <h2>📋 Operational Logbook</h2>
+    <div class="btns">
+      <button class="main" onclick="exportLog('json')">EXPORT JSON</button>
+      <button onclick="exportLog('csv')">EXPORT CSV</button>
+      <button onclick="exportLog('txt')">EXPORT TXT</button>
+    </div>
+  </div>
+  <div id="logList"></div>
+</section>
+
+</main>
+
+<nav class="bottomnav" id="bottomnav"></nav>
+<div id="toast" class="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ===================== OROPOS OPS C3 / ALL HAZARDS ===================== */
+const DB_KEY = 'oroposOpsC3v2';
+const $ = x => document.getElementById(x);
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : 'id-'+Date.now()+'-'+Math.random().toString(16).slice(2)); }
+
+/* ---------- Data model + migration from the two legacy apps ---------- */
+function defaultDb(){
+  return {
+    events: [], forces: [], vehicles: [], inventory: [], alerts: [], log: [],
+    settings: { botToken:'', chat:'', endpoint:'', tgAuto:false, defaultRegion:'oropos', units:'metric',
+      gpsAcc:'high', firmsKey:'', openWeatherKey:'', openWeatherEnabled:false, modelMode:'multi', pinEnabled:false, pinHash:'', lastKnownLoc:null,
+      autoScan:false, autoScanMinutes:10, alertLeads:[24,12,6,3,1,0.5], notificationEnabled:false, sourceRefreshMinutes:10, autoIncidentTelegram:false, sourceTelegram:false,
+      municipalityPoints:[], lastAutoScan:null, sentForecastAlerts:{} },
+    bluetooth: { devices: [] },
+    _migrated:false
+  };
+}
+function loadDb(){
+  let raw = localStorage.getItem(DB_KEY);
+  if (raw) { try { return Object.assign(defaultDb(), JSON.parse(raw)); } catch(e){ return defaultDb(); } }
+  // migrate legacy data so nothing is lost
+  let db = defaultDb();
+  try {
+    let a = JSON.parse(localStorage.getItem('opsC3CompleteData')||'null');
+    let b = JSON.parse(localStorage.getItem('oroposOpsC3Data')||'null');
+    let seen = new Set();
+    [a,b].forEach(src=>{
+      if (src && Array.isArray(src.events)) src.events.forEach(e=>{
+        if (!seen.has(e.id)) { seen.add(e.id); db.events.push(normalizeEvent(e)); }
+      });
+    });
+    if (a && a.settings){ db.settings.chat = a.settings.chat || db.settings.chat; db.settings.botToken = a.settings.botToken || db.settings.botToken || ''; db.settings.endpoint = a.settings.endpoint || db.settings.endpoint; db.settings.openWeatherKey = a.settings.openWeatherKey || db.settings.openWeatherKey || ''; db.settings.openWeatherEnabled = !!(a.settings.openWeatherEnabled ?? db.settings.openWeatherEnabled); }
+    if (b && b.settings){ db.settings.chat = db.settings.chat || b.settings.chatId || ''; db.settings.endpoint = db.settings.endpoint || b.settings.endpoint || ''; }
+    db._migrated = !!(a || b);
+    if (db._migrated) db.log.push(logEntry('Migration', 'Εισήχθησαν δεδομένα από προηγούμενες εκδόσεις της εφαρμογής.'));
+  } catch(e){}
+  persist(db);
+  return db;
+}
+function normalizeEvent(e){
+  return Object.assign({
+    id:uid(), type:'Άλλο', area:'', start:'', end:'', lat:'', lon:'', intensity:'Μέτριο',
+    description:'', instructions:'', source:'', status:'NEW', priority:'Κανονική',
+    responsible:'', vehicle:'', notes:'', arrival:null, timeline:[]
+  }, e, { status: mapOldStatus(e.status) });
+}
+function mapOldStatus(s){
+  if (s==='Ενεργό') return 'NEW';
+  if (s==='Ολοκληρωμένο') return 'COMPLETED';
+  if (s==='Διαγραμμένο') return 'COMPLETED';
+  return s || 'NEW';
+}
+let db = loadDb();
+function persist(target){ localStorage.setItem(DB_KEY, JSON.stringify(target||db)); }
+function logEntry(kind,msg){ return { id:uid(), t:new Date().toISOString(), kind, msg }; }
+function log(kind,msg){ db.log.unshift(logEntry(kind,msg)); if (db.log.length>500) db.log.length=500; persist(); if ($('logList') && $('logbook').classList.contains('on')) renderLog(); }
+
+/* ---------- Regions ---------- */
+const R = {
+  oropos:['Δήμος Ωρωπού',38.3030,23.7557],
+  eastattica:['Ανατολική Αττική',38.0500,23.9500],
+  attica:['Αττική',37.9900,23.7200],
+  atticaboeotia:['Αττικοβοιωτία',38.3500,23.3500],
+  wider:['Ευρύτερη περιοχή',38.2000,23.6000],
+  piraeus:['Πειραιάς',37.9475,23.6469],
+  keratsini:['Κερατσίνι - Δραπετσώνα',37.9625,23.6194],
+  athens:['Αθήνα',37.9838,23.7275],
+  marousi:['Μαρούσι',38.0563,23.8061],
+  marathon:['Μαραθώνας',38.1532,23.9628]
+};
+function fillRegionSelects(){
+  let opts = Object.entries(R).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join('');
+  $('region').innerHTML = opts;
+  $('setDefaultRegion').innerHTML = opts;
+  $('region').value = db.settings.defaultRegion || 'oropos';
+  $('setDefaultRegion').value = db.settings.defaultRegion || 'oropos';
+}
+
+/* ---------- Navigation ---------- */
+const SECTIONS = {
+  command:{label:'🏠', name:'COMMAND', pages:[['home','Αρχική'],['risk','Risk Center'],['alerts','Alerts']]},
+  environment:{label:'🌦️', name:'ENVIRONMENT', pages:[['weather','Καιρός'],['quakes','Σεισμοί'],['sources','Live Sources']]},
+  operations:{label:'🚒', name:'OPERATIONS', pages:[['events','Συμβάντα'],['forces','Δυνάμεις'],['vehicles','Οχήματα'],['inventory','Εξοπλισμός']]},
+  situation:{label:'🗺️', name:'SITUATION', pages:[['map','GIS Map']]},
+  system:{label:'⚙️', name:'SYSTEM', pages:[['settings','Ρυθμίσεις'],['bluetooth','Bluetooth'],['connectivity','Connectivity'],['data','Data'],['logbook','Logbook']]}
+};
+let currentSection = 'command';
+function pageSection(pageId){
+  for (const [k,v] of Object.entries(SECTIONS)) if (v.pages.some(p=>p[0]===pageId)) return k;
+  return 'command';
+}
+function renderBottomNav(){
+  $('bottomnav').innerHTML = Object.entries(SECTIONS).map(([k,v])=>
+    `<button class="${k===currentSection?'on':''}" onclick="switchSection('${k}')"><span class="ic">${v.label}</span><span>${v.name}</span></button>`
+  ).join('');
+}
+function renderSubNav(activePage){
+  let sec = SECTIONS[currentSection];
+  $('subnav').innerHTML = sec.pages.map(([id,label])=>
+    `<button class="${id===activePage?'on':''}" onclick="go('${id}')">${label}</button>`
+  ).join('');
+}
+function switchSection(sec){
+  currentSection = sec;
+  renderBottomNav();
+  go(SECTIONS[sec].pages[0][0]);
+}
+function go(id){
+  currentSection = pageSection(id);
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  $(id).classList.add('on');
+  renderBottomNav();
+  renderSubNav(id);
+  window.scrollTo(0,0);
+  const renderers = {
+    home:renderHome, risk:()=>renderRisk(), alerts:renderAlerts, events:renderEvents,
+    forces:renderForces, vehicles:renderVehicles, inventory:renderInventory,
+    settings:openSettings, bluetooth:renderBluetoothPage, connectivity:refreshConnectivity,
+    data:()=>{}, logbook:renderLog, quakes:()=>{}, map:initMapIfNeeded
+  };
+  if (renderers[id]) renderers[id]();
+}
+
+/* ---------- Clock ---------- */
+function tickClock(){ $('clock').textContent = new Date().toLocaleTimeString('el-GR'); }
+
+/* ---------- Connectivity ---------- */
+let connState = { internet:navigator.onLine, gps:'unknown', backend:'unknown', telegram:'unknown', bluetooth:('bluetooth' in navigator)?'available':'unsupported' };
+function pill(label, state){
+  let cls = state==='ok'?'g':state==='warn'?'y':state==='bad'?'r':'gray';
+  return `<span class="pill"><span class="dot ${cls}"></span>${label}</span>`;
+}
+function renderConnBar(){
+  $('connbar').innerHTML =
+    pill('GPS', connState.gps==='ok'?'ok':connState.gps==='unknown'?'gray':'bad') +
+    pill('Internet', connState.internet?'ok':'bad') +
+    pill('Backend', db.settings.endpoint ? (connState.backend==='ok'?'ok':connState.backend==='bad'?'bad':'warn') : 'gray') +
+    pill('Telegram', db.settings.botToken && db.settings.chat ? 'ok' : 'gray') +
+    pill('Bluetooth', connState.bluetooth==='available'?'ok':'gray');
+}
+async function refreshConnectivity(){
+  connState.internet = navigator.onLine;
+  if (navigator.geolocation){
+    connState.gps = connState.gps==='ok' ? 'ok' : 'unknown';
+  } else connState.gps = 'bad';
+  if (db.settings.endpoint){
+    try{ await fetch(db.settings.endpoint, {method:'HEAD', mode:'no-cors'}); connState.backend='ok'; }
+    catch(e){ connState.backend='bad'; }
+  } else connState.backend='unknown';
+  renderConnBar();
+  if ($('connDetail')) $('connDetail').innerHTML =
+    `<div class="kv"><span>Internet</span><span>${connState.internet?'🟢 ONLINE':'🔴 OFFLINE'}</span></div>
+     <div class="kv"><span>GPS</span><span>${connState.gps==='ok'?'🟢 ACTIVE':connState.gps==='bad'?'🔴 UNAVAILABLE':'🟡 ΑΓΝΩΣΤΟ — δοκίμασε λήψη θέσης'}</span></div>
+     <div class="kv"><span>Backend endpoint</span><span>${db.settings.endpoint ? (connState.backend==='ok'?'🟢 ONLINE':'🔴 OFFLINE') : '⚪ NOT CONFIGURED'}</span></div>
+     <div class="kv"><span>Telegram</span><span>${db.settings.botToken && db.settings.chat ? '🟢 CONFIGURED' : '⚪ NOT CONFIGURED'}</span></div>
+     <div class="kv"><span>Bluetooth API</span><span>${connState.bluetooth==='available'?'🟢 ΥΠΟΣΤΗΡΙΖΕΤΑΙ':'🔴 ΜΗ ΔΙΑΘΕΣΙΜΟ ΣΕ ΑΥΤΟ ΤΟ BROWSER'}</span></div>
+     <div class="kv"><span>Data sync</span><span>${navigator.onLine ? '🟢 SYNCED (local-first)' : '🟡 OFFLINE — τα δεδομένα αποθηκεύονται τοπικά'}</span></div>`;
+  renderHomeConn();
+}
+window.addEventListener('online', ()=>{ refreshConnectivity(); toast('Η σύνδεση Internet επανήλθε.'); log('Connectivity','Internet online'); });
+window.addEventListener('offline', ()=>{ refreshConnectivity(); toast('Λειτουργία OFFLINE — τα δεδομένα αποθηκεύονται τοπικά.'); log('Connectivity','Internet offline'); });
+
+/* ---------- Toast ---------- */
+function toast(s){ $('toast').textContent=s; $('toast').style.display='block'; setTimeout(()=>$('toast').style.display='none',3500); }
+
+/* ===================== ALL-HAZARDS AUTO INTELLIGENCE ===================== */
+const OROPOS_COMMUNITIES = [
+  ['Ωρωπός',38.298198,23.752948],['Κάμπος Ωρωπού',38.300,23.740],['Πλατάνια Ωρωπού',38.310,23.765],
+  ['Σκάλα Ωρωπού',38.320,23.790],['Νέα Πολιτεία',38.325,23.805],['Χαλκούτσι',38.320,23.850],['Νέα Παλάτια',38.322,23.790],
+  ['Αγία Αικατερίνη',38.330,23.800],['Άγιος Αθανάσιος',38.335,23.805],['Άγιος Κωνσταντίνος',38.325,23.780],['Πόντιοι',38.318,23.775],
+  ['Συκάμινο',38.300,23.700],['Καμάρι',38.290,23.710],['Κατηφόρι',38.295,23.720],['Νέο Συκάμινο',38.305,23.715],['Πευκιάς',38.285,23.705],
+  ['Αυλώνας',38.250,23.690],['Ασπροχώρι',38.275,23.665],
+  ['Αφίδνες',38.180,23.850],['Αγία Τριάδα',38.190,23.855],['Δροσοπηγή',38.175,23.825],['Κοκκινόβραχος',38.165,23.845],['Κοσμοθέα',38.175,23.870],['Σταθμός Αφιδνών',38.185,23.835],
+  ['Κάλαμος',38.280,23.860],['Άγιοι Απόστολοι',38.270,23.880],
+  ['Καπανδρίτι',38.220,23.870],['Άγιοι Ανάργυροι',38.230,23.855],['Λίμνη Μαραθώνα',38.190,23.900],['Μικροχώρι',38.205,23.885],
+  ['Μαλακάσα',38.210,23.790],['Μήλεσι',38.200,23.805],['Σφενδάλη',38.225,23.770],
+  ['Μαρκόπουλο Ωρωπού',38.250,23.820],['Αγία Βαρβάρα',38.260,23.825],['Μπάφι',38.240,23.805],['Νέο Λιβύσσιο',38.245,23.835],
+  ['Πολυδένδρι',38.170,23.860],['Άγιος Γεώργιος',38.180,23.875],['Ηρακλειδείς',38.160,23.850],['Ταξιάρχες',38.165,23.875]
+];
+let autoScanTimer=null, geoCommunityCache=null;
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function requestNotifications(){
+  if(!('Notification' in window)) return toast('Το browser δεν υποστηρίζει notifications');
+  Notification.requestPermission().then(x=>toast(x==='granted'?'Notifications ενεργοποιήθηκαν':'Notifications δεν επιτράπηκαν'));
+}
+function notifyUser(title,body){
+  if(db.settings.notificationEnabled && 'Notification' in window && Notification.permission==='granted') try{new Notification(title,{body});}catch(_){ }
+}
+async function geocodeOroposCommunities(){
+  if(geoCommunityCache) return geoCommunityCache;
+  let cached=localStorage.getItem('oroposCommunityGeocodesV2');
+  if(cached){try{let x=JSON.parse(cached); if(Array.isArray(x)&&x.length) {geoCommunityCache=x;return x;}}catch(_){} }
+  let out=[];
+  for(const [name,fl,fn] of OROPOS_COMMUNITIES){
+    try{
+      const q=encodeURIComponent(name+' Δήμος Ωρωπού Ελλάδα');
+      const u=`https://geocoding-api.open-meteo.com/v1/search?name=${q}&count=5&language=el&format=json&countryCode=GR`;
+      const j=await fetch(u,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('geocoding HTTP '+r.status);return r.json()});
+      const hit=(j.results||[]).find(x=>/Αττικ|Attica/i.test((x.admin1||'')+' '+(x.admin2||''))||/Ωρωπ/i.test((x.name||'')+' '+(x.admin2||''))) || j.results?.[0];
+      if(hit) out.push({name,lat:+hit.latitude,lon:+hit.longitude,source:'Open-Meteo Geocoding'});
+      else out.push({name,lat:fl,lon:fn,source:'Municipality reference point'});
+    }catch(_){out.push({name,lat:fl,lon:fn,source:'Municipality reference point'});}
+  }
+  geoCommunityCache=out; localStorage.setItem('oroposCommunityGeocodesV2',JSON.stringify(out));
+  return out;
+}
+async function fetchAutoPoint(p){
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&forecast_days=3&timezone=auto`+
+  `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation,cloud_cover,pressure_msl,visibility,uv_index`+`&hourly=temperature_2m,relative_humidity_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,snowfall,cape,cloud_cover,visibility,pressure_msl`+
+  `&daily=weather_code,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,temperature_2m_max,temperature_2m_min,snowfall_sum`;
+  const j=await fetch(u,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Open-Meteo HTTP '+r.status);return r.json()});
+  if(j.error)throw new Error(j.reason||'Open-Meteo error');
+  return {point:p,j};
+}
+function hourlyHazard(h,i){
+  const t=Number(h.temperature_2m?.[i]??0), rh=Number(h.relative_humidity_2m?.[i]??100), rain=Number(h.precipitation?.[i]??0), prob=Number(h.precipitation_probability?.[i]??0), gust=Number(h.wind_gusts_10m?.[i]??0), code=Number(h.weather_code?.[i]??0), snow=Number(h.snowfall?.[i]??0), cape=Number(h.cape?.[i]??0);
+  let fire=0,flood=0,storm=0,wind=0,heat=0,snowRisk=0,reasons=[];
+  if(t>=38)fire+=35;else if(t>=33)fire+=25;else if(t>=28)fire+=12;
+  if(rh<=20)fire+=30;else if(rh<=30)fire+=22;else if(rh<=45)fire+=10;
+  if(gust>=60)fire+=25;else if(gust>=40)fire+=15;else if(gust>=25)fire+=8;
+  if(rain<0.2)fire+=12;else if(rain<2)fire+=7;
+  if(rain>=20)flood+=45;else if(rain>=10)flood+=30;else if(rain>=5)flood+=15;else if(rain>=2)flood+=8;
+  if(prob>=80)flood+=25;else if(prob>=60)flood+=15;else if(prob>=40)flood+=8;
+  if([95,96,99].includes(code))storm+=55;else if([65,67,82].includes(code))storm+=30;
+  if(cape>=1000)storm+=20;else if(cape>=500)storm+=10;
+  if(gust>=70)storm+=25;else if(gust>=50)storm+=12;
+  if(gust>=90)wind=100;else if(gust>=70)wind=80;else if(gust>=55)wind=60;else if(gust>=40)wind=35;else if(gust>=25)wind=15;
+  if(t>=40)heat=100;else if(t>=38)heat=85;else if(t>=35)heat=65;else if(t>=32)heat=45;else if(t>=29)heat=25;
+  if([71,73,75,77,85,86].includes(code))snowRisk+=50;if(t<=0)snowRisk+=25;else if(t<=3)snowRisk+=12;if(snow>0)snowRisk+=Math.min(25,snow*3);
+  const risks=[['🔥 Πυρκαγιά',fire],['🌊 Πλημμύρα',flood],['⛈️ Καταιγίδα',storm],['💨 Άνεμος',wind],['🌡️ Θερμότητα',heat],['❄️ Χιόνι/πάγος',snowRisk]];
+  const top=risks.sort((a,b)=>b[1]-a[1])[0];
+  if(top[1]<55)return null;
+  if(top[0].includes('Πυρκαγιά')) reasons=['θερμοκρασία '+t.toFixed(1)+'°C','υγρασία '+rh.toFixed(0)+'%','ριπές '+gust.toFixed(0)+' km/h'];
+  if(top[0].includes('Πλημμύρα')) reasons=['υετός '+rain.toFixed(1)+' mm/h','πιθανότητα '+prob+'%'];
+  if(top[0].includes('Καταιγίδα')) reasons=['WMO code '+code,'CAPE '+Math.round(cape)+' J/kg','ριπές '+gust.toFixed(0)+' km/h'];
+  if(top[0].includes('Άνεμος')) reasons=['ριπές '+gust.toFixed(0)+' km/h'];
+  if(top[0].includes('Θερμότητα')) reasons=['θερμοκρασία '+t.toFixed(1)+'°C'];
+  if(top[0].includes('Χιόνι')) reasons=['snowfall '+snow.toFixed(1)+' cm','θερμοκρασία '+t.toFixed(1)+'°C'];
+  return {hazard:top[0],score:Math.min(100,Math.round(top[1])),reasons,time:h.time[i],t,rh,rain,prob,gust,code};
+}
+function findForecastEvents(j){
+  const h=j.hourly||{}, out=[]; const now=Date.now();
+  for(let i=0;i<(h.time||[]).length;i++){
+    const ts=new Date(h.time[i]).getTime(); if(ts<now)continue;
+    const z=hourlyHazard(h,i); if(z) out.push(z);
+  }
+  // collapse to first/strongest window per hazard in next 72h
+  const by={}; out.forEach(x=>{let k=x.hazard;if(!by[k]||x.score>by[k].score)by[k]=x;});
+  return Object.values(by).sort((a,b)=>new Date(a.time)-new Date(b.time));
+}
+function leadLabel(h){return h===0.5?'30min':h+'h';}
+async function sendForecastAlert(ev,point,lead){
+  const key=`${point.name}|${ev.hazard}|${ev.time}|${lead}`;
+  db.settings.sentForecastAlerts=db.settings.sentForecastAlerts||{};
+  if(db.settings.sentForecastAlerts[key])return false;
+  const when=new Date(ev.time).toLocaleString('el-GR');
+  const text=`⚠️ OROPOS OPS C3 — ALL HAZARDS\n`+
+    `ΠΡΟΕΙΔΟΠΟΙΗΣΗ ΠΡΟΓΝΩΣΗΣ\n`+
+    `${ev.hazard} — ${point.name}\n`+
+    `Εκτιμώμενη έναρξη: ${when}\n`+
+    `Προειδοποίηση: ${leadLabel(lead)} πριν\n`+
+    `Risk score εφαρμογής: ${ev.score}/100\n`+
+    `Αιτίες: ${ev.reasons.join(' · ')}\n`+
+    `📍 ${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}\n`+
+    `🛰️ SOURCE: Open-Meteo forecast / model-derived\n`+
+    `ℹ️ Δεν αποτελεί επίσημη κρατική προειδοποίηση.`;
+  if(db.settings.botToken&&db.settings.chat){try{await sendTelegramText(text);db.settings.sentForecastAlerts[key]=new Date().toISOString();persist();log('Telegram','Forecast alert '+key);notifyUser('OROPOS OPS — '+ev.hazard,point.name+' · '+leadLabel(lead));return true;}catch(e){log('Telegram','Forecast alert failed: '+e.message);return false;}}
+  return false;
+}
+async function runAutoScan(force=false){
+  if(!force && !db.settings.autoScan)return;
+  const status=$('autoScanStatus'); if(status)status.textContent='AUTO CHECK: σάρωση Δήμου Ωρωπού…';
+  try{
+    const points=await geocodeOroposCommunities();
+    const results=await Promise.allSettled(points.map(fetchAutoPoint));
+    let danger=[];
+    results.forEach((r,i)=>{if(r.status==='fulfilled'){const events=findForecastEvents(r.value.j);events.forEach(ev=>danger.push({point:points[i],ev}));}});
+    danger.sort((a,b)=>b.ev.score-a.ev.score);
+    const now=Date.now();
+    for(const x of danger){
+      const diffH=(new Date(x.ev.time).getTime()-now)/3600000;
+      for(const lead of (db.settings.alertLeads||[24,12,6,3,1,0.5])){
+        if(Math.abs(diffH-lead)<=Math.max(0.30, lead===0.5?0.30:0.25)) await sendForecastAlert(x.ev,x.point,lead);
+      }
+    }
+    db.settings.lastAutoScan=new Date().toISOString(); persist();
+    if(status)status.textContent=`AUTO CHECK: ${points.length} σημεία · ${danger.length} παράθυρα κινδύνου · ${new Date().toLocaleTimeString('el-GR')}`;
+    renderMunicipalityCoverage(points,danger);
+  }catch(e){if(status)status.textContent='AUTO CHECK: UNAVAILABLE — '+e.message;log('AutoScan','Αποτυχία: '+e.message);}
+}
+function scheduleAutoScan(){
+  clearInterval(autoScanTimer);autoScanTimer=null;
+  if(db.settings.autoScan){const ms=Math.max(10,+db.settings.autoScanMinutes||10)*60000;autoScanTimer=setInterval(()=>runAutoScan(false),ms);setTimeout(()=>runAutoScan(false),1500);}
+}
+function saveAutoSettings(){
+  db.settings.autoScan=$('autoScan').checked;db.settings.autoScanMinutes=+$('autoScanMinutes').value||10;db.settings.autoIncidentTelegram=$('autoIncidentTelegram').checked;db.settings.sourceTelegram=$('sourceTelegram').checked;db.settings.notificationEnabled=$('notificationEnabled').checked;persist();scheduleAutoScan();toast('Auto Engine αποθηκεύτηκε');
+}
+function renderMunicipalityCoverage(points,danger=[]){
+  const el=$('municipalityCoverage');if(!el)return;
+  const bad=new Set(danger.map(x=>x.point.name));
+  el.innerHTML=`<b>${points.length} σημεία κοινοτήτων ελέγχθηκαν αυτόματα</b><div class="muted">`+points.map(p=>`${bad.has(p.name)?'🔴':'🟢'} ${esc(p.name)}`).join(' · ')+`</div>`;
+}
+async function maybeTelegramSourceAlert(key,text,title){
+  if(!db.settings.sourceTelegram || !db.settings.botToken || !db.settings.chat)return;
+  db.settings.sentForecastAlerts=db.settings.sentForecastAlerts||{};
+  const k='SRC|'+key;if(db.settings.sentForecastAlerts[k])return;
+  try{await sendTelegramText(text);db.settings.sentForecastAlerts[k]=new Date().toISOString();persist();log('Telegram','Source alert '+title);notifyUser(title,text.slice(0,160));}catch(e){log('Telegram','Source alert failed: '+e.message);}
+}
+
+async function fetchFirms(){
+  const el=$('fireFeed');if(!el)return;
+  if(!db.settings.firmsKey){el.innerHTML='NASA FIRMS: <b>NOT CONFIGURED</b> — απαιτείται δωρεάν MAP_KEY.';return;}
+  try{
+    const bbox='23.55,38.05,24.05,38.45';
+    const u=`https://firms.modaps.eosdis.nasa.gov/api/area/csv/${encodeURIComponent(db.settings.firmsKey)}/VIIRS_NOAA21_NRT/${bbox}/1`;
+    const csv=await fetch(u,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('FIRMS HTTP '+r.status);return r.text()});
+    const lines=csv.trim().split(/\r?\n/);const head=lines.shift()?.split(',')||[];const ix=k=>head.indexOf(k);const rows=[];
+    lines.forEach(line=>{const a=line.split(',');if(a.length<head.length)return;const lat=+a[ix('latitude')],lon=+a[ix('longitude')];if(Number.isFinite(lat)&&Number.isFinite(lon))rows.push({lat,lon,conf:a[ix('confidence')],frp:a[ix('frp')],date:a[ix('acq_date')],time:a[ix('acq_time')],sat:a[ix('satellite')],source:'NASA FIRMS'});});
+    window._lastFirms=rows;el.innerHTML=rows.length?`<b>${rows.length}</b> δορυφορικές ανιχνεύσεις τελευταίου 24ώρου/περιοχής · <span class="muted">NASA FIRMS VIIRS NOAA-21</span>`:'0 ανιχνεύσεις από το συγκεκριμένο feed.';
+    log('FIRMS','Live update: '+rows.length+' detections');
+    const recent=rows.filter(x=>x.date===new Date().toISOString().slice(0,10)).slice(0,20);
+    for(const f of recent){const key=`${f.lat.toFixed(4)},${f.lon.toFixed(4)}|${f.date}|${f.time}`;await maybeTelegramSourceAlert(key,`🔥 NASA FIRMS HOTSPOT\nΠεριοχή Δήμου Ωρωπού/ευρύτερη ζώνη\n📍 ${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}\nFRP: ${f.frp||'—'} MW · confidence: ${f.conf||'—'}\n🛰️ VIIRS NOAA-21\n⚠️ Δορυφορική ανίχνευση — όχι επιβεβαιωμένο συμβάν Πυροσβεστικής.`,`NASA FIRMS hotspot`);}
+  }catch(e){el.textContent='NASA FIRMS: UNAVAILABLE — '+e.message;}
+}
+async function fetchOfficialRSS(){
+  const el=$('officialFeed');if(!el)return;
+  try{
+    const u='https://civilprotection.gov.gr/deltia-tupou.rss';
+    const x=await fetch(u,{cache:'no-store'});if(!x.ok)throw new Error('RSS HTTP '+x.status);const text=await x.text();const doc=new DOMParser().parseFromString(text,'application/xml');
+    const items=[...doc.querySelectorAll('item')].slice(0,6);if(!items.length)throw new Error('Δεν βρέθηκαν entries');
+    el.innerHTML=items.map(it=>{const title=it.querySelector('title')?.textContent||'—';const link=it.querySelector('link')?.textContent||'';const date=it.querySelector('pubDate')?.textContent||'';return `<div class="card"><b>${esc(title)}</b><div class="muted">${esc(date)}</div>${link?`<a href="${esc(link)}" target="_blank" rel="noopener">Άνοιγμα επίσημης ανακοίνωσης</a>`:''}</div>`}).join('');
+    const keywords=/πυρκαγ|καιρ|προειδοποι|πλημμ|καύσω|χιον|καταιγ|ετοιμότητα|112|κινδύν/i;
+    for(const it of items){const title=it.querySelector('title')?.textContent||'—',link=it.querySelector('link')?.textContent||'',date=it.querySelector('pubDate')?.textContent||'';if(keywords.test(title)){const key=link||title;await maybeTelegramSourceAlert(key,`🏛️ ΕΠΙΣΗΜΗ ΕΝΗΜΕΡΩΣΗ\n${title}\n${date}\n${link}`,`Πολιτική Προστασία`);}}
+  }catch(e){el.textContent='Επίσημο RSS: UNAVAILABLE — '+e.message;}
+}
+async function refreshAllSources(){
+  const s=$('sourceStatus');if(s)s.innerHTML='<div class="status">Έλεγχος live πηγών…</div>';
+  await Promise.allSettled([fetchFirms(),fetchOfficialRSS(),getQuakes()]);
+  if(s)s.innerHTML=`<div class="card"><b>Open-Meteo</b><br>LIVE forecast / models</div><div class="card"><b>RainViewer</b><br>LIVE radar όταν υπάρχει κάλυψη</div><div class="card"><b>USGS</b><br>LIVE earthquake feed</div><div class="card"><b>NASA FIRMS</b><br>${db.settings.firmsKey?'CONFIGURED':'MAP_KEY required'}</div><div class="card"><b>Πολιτική Προστασία</b><br>Official RSS</div><div class="card"><b>Telegram</b><br>${db.settings.botToken&&db.settings.chat?'READY':'NOT CONFIGURED'}</div>`;
+  renderMapMarkers();toast('Live sources refreshed');
+}
+async function weatherFromGPS(){
+  if(!navigator.geolocation)return toast('Το GPS δεν υποστηρίζεται');
+  navigator.geolocation.getCurrentPosition(async p=>{
+    const lat=p.coords.latitude,lon=p.coords.longitude;db.settings.lastKnownLoc={lat,lon,t:new Date().toISOString()};persist();
+    const name=`GPS ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    try{const j=await fetchAutoPoint({name,lat,lon,source:'Browser GPS'});weatherByRegion.gps={key:'gps',name,lat,lon,retrievedAt:new Date().toISOString(),current:j.j.current||null,hourly:j.j.hourly,daily:(j.j.daily.time||[]).map((d,i)=>({region:name,date:d,code:j.j.daily.weather_code[i],rain:j.j.daily.precipitation_sum[i]||0,prob:j.j.daily.precipitation_probability_max[i]||0,wind:j.j.daily.wind_speed_10m_max[i]||0,gust:j.j.daily.wind_gusts_10m_max[i]||0,tmin:j.j.daily.temperature_2m_min[i],tmax:j.j.daily.temperature_2m_max[i],snow:j.j.daily.snowfall_sum[i]||0,uv:null,label:'LIVE GPS',level:'normal',reason:'GPS location',dir:null}))};renderWeatherNow(weatherByRegion.gps);renderHourly(weatherByRegion.gps);renderDaily(weatherByRegion.gps.daily);go('weather');toast('Ο καιρός φορτώθηκε από το ακριβές GPS στίγμα');}
+    catch(e){toast('GPS weather unavailable: '+e.message)}
+  },e=>toast('Δεν δόθηκε άδεια GPS: '+e.message),{enableHighAccuracy:db.settings.gpsAcc!=='low',maximumAge:60000,timeout:20000});
+}
+
+/* ===================== WEATHER ===================== */
+let weatherByRegion = {}; // key -> {daily:[...], hourly:{...}, current:{...}}
+let weatherTimer = null;
+
+function wxClassify(code, rainSum, windGust){
+  if ([95,96,99].includes(code) || rainSum>=20 || windGust>=70) return ['Έντονα / ακραία','strong'];
+  if ([65,67,82].includes(code) || rainSum>=10 || windGust>=50) return ['Ισχυρά','medium'];
+  return ['Ήπιες συνθήκες','normal'];
+}
+function wxDesc(code){
+  if ([95,96,99].includes(code)) return 'Καταιγίδα / πιθανό χαλάζι';
+  if ([65,67,82].includes(code)) return 'Έντονη βροχή ή καταιγίδα';
+  if ([63,81].includes(code)) return 'Ισχυρή βροχή';
+  if ([61,62].includes(code)) return 'Βροχή';
+  if ([71,73,75,77,85,86].includes(code)) return 'Χιόνι ή χιονόνερο';
+  if ([56,57,66,67].includes(code)) return 'Παγετός / παγωμένη βροχή';
+  if ([45,48].includes(code)) return 'Ομίχλη';
+  if ([0,1].includes(code)) return 'Αίθριος καιρός';
+  if ([2,3].includes(code)) return 'Νεφώσεις';
+  if ([51,53,55].includes(code)) return 'Ασθενής ψιχάλα';
+  return 'Μεταβολή καιρού';
+}
+function degDir(deg){ if(deg==null || isNaN(deg)) return '—'; return ['N','NE','E','SE','S','SW','W','NW'][Math.round(deg/45)%8]; }
+function beaufort(kmh){ const s=[1,5,11,19,28,38,49,61,74,88,102,117]; let b=0; while(b<12 && kmh>=s[b]) b++; return b; }
+function wxReason(code, rain, prob, gust, tmin, tmax){
+  const a=[];
+  if([95,96,99].includes(code)) a.push('αστάθεια/καταιγίδα στον προγνωστικό δείκτη');
+  else if([80,81,82].includes(code)) a.push('όμβροι/μπόρες');
+  else if([61,63,65].includes(code)) a.push('αναμενόμενη βροχόπτωση');
+  else if([51,53,55].includes(code)) a.push('ασθενής υετός/ψιχάλα');
+  else if([71,73,75,77,85,86].includes(code)) a.push('θερμοκρασίες και υετός συμβατά με χιονόπτωση/χιονόνερο');
+  else if([45,48].includes(code)) a.push('υψηλή υγρασία και χαμηλή ορατότητα/ομίχλη');
+  if(prob>=60) a.push(`πιθανότητα υετού ${prob}%`);
+  if(rain>=10) a.push(`συσσωρευμένος υετός ${rain.toFixed(1)} mm`);
+  if(gust>=50) a.push(`ισχυρές ριπές έως ${gust.toFixed(1)} km/h`);
+  if(tmax>=35) a.push(`υψηλή μέγιστη θερμοκρασία ${tmax.toFixed(1)}°C`);
+  if(tmin<=3) a.push(`χαμηλή ελάχιστη θερμοκρασία ${tmin.toFixed(1)}°C`);
+  if(!a.length) a.push('δεν εμφανίζεται σημαντικός μετεωρολογικός παράγοντας');
+  return a.join(' · ');
+}
+function buildOwmSupplement(j){
+  if(!j || !j.main) return null;
+  return {source:'OpenWeather', current:{temperature_2m:j.main.temp, apparent_temperature:j.main.feels_like, relative_humidity_2m:j.main.humidity, pressure_msl:j.main.pressure, cloud_cover:j.clouds?.all, wind_speed_10m:(j.wind?.speed||0)*3.6, wind_gusts_10m:(j.wind?.gust||0)*3.6, wind_direction_10m:j.wind?.deg, weather_code:null, precipitation:j.rain?.['1h']||0}, description:j.weather?.[0]?.description||''};
+}
+async function fetchOpenWeather(key,r){
+  if(!key) return null;
+  const u=`https://api.openweathermap.org/data/2.5/weather?lat=${r[1]}&lon=${r[2]}&units=metric&lang=el&appid=${encodeURIComponent(key)}`;
+  const x=await fetch(u,{cache:'no-store'}); if(!x.ok) throw new Error('OpenWeather HTTP '+x.status); return buildOwmSupplement(await x.json());
+}
+async function fetchModel(name,modelId,r,days){
+  const vars='temperature_2m,relative_humidity_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,cloud_cover,pressure_msl,visibility,snowfall,cape';
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${r[1]}&longitude=${r[2]}&forecast_days=${Math.min(days,15)}&timezone=auto&models=${encodeURIComponent(modelId)}&hourly=${vars}`;
+  const x=await fetch(u,{cache:'no-store'}); if(!x.ok) throw new Error(name+' HTTP '+x.status); const j=await x.json(); if(j.error)throw new Error(j.reason||'model unavailable'); return {name,modelId,j};
+}
+async function fetchRegionWeather(key, days){
+  let r = R[key];
+  let u = `https://api.open-meteo.com/v1/forecast?latitude=${r[1]}&longitude=${r[2]}&forecast_days=${days}&timezone=auto`
+    + `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation,cloud_cover,pressure_msl,visibility,uv_index`
+    + `&hourly=temperature_2m,relative_humidity_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,visibility,uv_index,snowfall,cape,cloud_cover,pressure_msl`
+    + `&daily=weather_code,precipitation_sum,precipitation_probability_max,precipitation_hours,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,temperature_2m_max,temperature_2m_min,uv_index_max,snowfall_sum`;
+  let j = await fetch(u,{cache:'no-store'}).then(x=>{if(!x.ok) throw new Error('Open-Meteo HTTP '+x.status);return x.json()});
+  if (j.error) throw new Error(j.reason||'API error');
+  let todayStr = j.hourly.time[0].slice(0,10);
+  let todayHours = j.hourly.time.map((t,i)=>i).filter(i=>j.hourly.time[i].slice(0,10)===todayStr);
+  let minRhToday = todayHours.length ? Math.min(...todayHours.map(i=>j.hourly.relative_humidity_2m[i])) : null;
+  let daily = [];
+  for (let i=0;i<j.daily.time.length;i++){
+    let gust=j.daily.wind_gusts_10m_max?.[i]||j.daily.wind_speed_10m_max?.[i]||0;
+    let cls = wxClassify(j.daily.weather_code[i], j.daily.precipitation_sum[i]||0, gust);
+    const dayKey=j.daily.time[i];
+    const dayIdx=j.hourly.time.map((t,k)=>t.slice(0,10)===dayKey?k:-1).filter(k=>k>=0);
+    const maxCape=dayIdx.length?Math.max(...dayIdx.map(k=>Number(j.hourly.cape?.[k]||0))):0;
+    const meanCloud=dayIdx.length?dayIdx.reduce((a,k)=>a+Number(j.hourly.cloud_cover?.[k]||0),0)/dayIdx.length:0;
+    let reason=wxReason(j.daily.weather_code[i],j.daily.precipitation_sum[i]||0,j.daily.precipitation_probability_max?.[i]||0,gust,j.daily.temperature_2m_min[i],j.daily.temperature_2m_max[i]);
+    if([95,96,99].includes(j.daily.weather_code[i]) && maxCape>=500) reason += ` · CAPE έως ${Math.round(maxCape)} J/kg, ένδειξη ατμοσφαιρικής αστάθειας`;
+    else if((j.daily.precipitation_sum[i]||0)>0 && meanCloud>=70) reason += ` · μέση νεφοκάλυψη περίπου ${Math.round(meanCloud)}%`;
+    daily.push({region:r[0],lat:r[1],lon:r[2],date:j.daily.time[i],code:j.daily.weather_code[i],rain:j.daily.precipitation_sum[i]||0,prob:j.daily.precipitation_probability_max?.[i]||0,wind:j.daily.wind_speed_10m_max[i]||0,gust,tmin:j.daily.temperature_2m_min[i],tmax:j.daily.temperature_2m_max[i],uv:j.daily.uv_index_max?.[i]??null,snow:j.daily.snowfall_sum?.[i]||0,label:cls[0],level:cls[1],reason,minRh:i===0?minRhToday:null,dir:j.daily.wind_direction_10m_dominant?.[i]??null,cape:maxCape,cloud:meanCloud});
+  }
+  let models={}, modelErrors={};
+  if(db.settings.modelMode!=='openmeteo'){
+    const specs=[['ECMWF IFS 0.25°','ecmwf_ifs025',15],['DWD ICON Seamless','icon_seamless',15],['NOAA GFS Seamless','ncep_gfs_seamless',16],['Météo-France ARPEGE Europe','meteofrance_arpege_europe',4],['Canadian GEM Seamless','cmc_gem_seamless',15],['JMA Seamless','jma_seamless',15],['UK Met Office Seamless','ukmo_seamless',15],['MET Norway Seamless','metno_seamless',15]];
+    const out=await Promise.allSettled(specs.map(a=>fetchModel(a[0],a[1],r,Math.min(days,a[2]))));
+    out.forEach((z,i)=>{ if(z.status==='fulfilled') models[z.value.name]=z.value.j; else modelErrors[specs[i][0]]=z.reason?.message||'UNAVAILABLE'; });
+  }
+  let openWeather=null;
+  if(db.settings.openWeatherEnabled && db.settings.openWeatherKey){ try{openWeather=await fetchOpenWeather(db.settings.openWeatherKey,r);}catch(e){openWeather={error:e.message};} }
+  return {key,name:r[0],lat:r[1],lon:r[2],current:j.current,hourly:j.hourly,daily,models,modelErrors,openWeather,source:'Open-Meteo',retrievedAt:new Date().toISOString()};
+}
+async function loadWeather(all){
+  let keys = all ? Object.keys(R) : [$('region').value];
+  let days = Math.min(15, Math.max(1, parseInt($('horizon').value||'7',10)));
+  $('weatherStatus').textContent = 'Λήψη πρόγνωσης + πολυμοντέλων…';
+  $('weatherList').innerHTML = '<div class="muted">Λήψη δεδομένων από Open-Meteo και ελεύθερα μοντέλα…</div>';
+  try {
+    let results = await Promise.all(keys.map(k=>fetchRegionWeather(k, days)));
+    results.forEach(r=>weatherByRegion[r.key]=r);
+    let primary = weatherByRegion[$('region').value];
+    let okModels=Object.keys(primary?.models||{}); $('weatherStatus').textContent = `LIVE — ${results.length} περιοχή(ές) · Open-Meteo Best Match · Models OK: ${okModels.length?okModels.join(', '):'κανένα ανεξάρτητο model feed'} · ${days} ημέρες.`;
+    renderWeatherNow(primary); renderHourly(primary); renderDaily(results.flatMap(r=>r.daily)); renderModelMatrix(primary); renderHome(); computeAllRisk();
+    log('Weather', `Πολυπηγές ενημέρωση: ${results.map(r=>r.name).join(', ')}`);
+  } catch(e){ $('weatherStatus').textContent='ΑΠΟΤΥΧΙΑ — χρήση cached/last known data όπου υπάρχει.'; $('weatherList').innerHTML='<div class="status">Δεν ήταν δυνατή η live ενημέρωση. Η εφαρμογή συνεχίζει με τοπικά δεδομένα.</div>'; }
+}
+function renderWeatherNow(r){
+  if(!r || !r.current){ $('weatherNow').textContent='—'; return; }
+  let c=r.current, ow=r.openWeather;
+  $('weatherNow').innerHTML=`<div class="kv"><span>Περιοχή</span><span>${r.name}</span></div><div class="kv"><span>Θερμοκρασία</span><span>${c.temperature_2m}°C (αίσθηση ${c.apparent_temperature}°C)</span></div><div class="kv"><span>Υγρασία</span><span>${c.relative_humidity_2m}%</span></div><div class="kv"><span>Άνεμος / ριπές</span><span>${c.wind_speed_10m} / ${c.wind_gusts_10m} km/h · Bft ${beaufort(c.wind_speed_10m)} / ${beaufort(c.wind_gusts_10m)} · ${degDir(c.wind_direction_10m)}</span></div><div class="kv"><span>Νεφοκάλυψη</span><span>${c.cloud_cover}%</span></div><div class="kv"><span>Πίεση</span><span>${c.pressure_msl} hPa</span></div><div class="kv"><span>Κατάσταση</span><span>${wxDesc(c.weather_code)}</span></div>${ow&&!ow.error?`<div class="kv"><span>OpenWeather cross-check</span><span>${ow.current.temperature_2m.toFixed(1)}°C · ${ow.description}</span></div>`:''}<div class="muted">SOURCE: Open-Meteo Best Match · LAST UPDATE: ${r.retrievedAt?new Date(r.retrievedAt).toLocaleString('el-GR'):'—'}</div>`;
+}
+function renderHourly(r){
+  if(!r || !r.hourly){ $('hourlyList').textContent='—'; return; }
+  let now=new Date(), idx0=r.hourly.time.findIndex(t=>new Date(t)>=now); if(idx0<0)idx0=0; let rows=[];
+  for(let i=idx0;i<Math.min(idx0+24,r.hourly.time.length);i++) rows.push(`<div class="kv"><span>${new Date(r.hourly.time[i]).toLocaleString('el-GR',{weekday:'short',hour:'2-digit',minute:'2-digit'})}</span><span>${r.hourly.temperature_2m[i]}°C · 💧${r.hourly.precipitation_probability[i]}% · 💨${r.hourly.wind_speed_10m[i]} km/h · ριπές ${r.hourly.wind_gusts_10m[i]} km/h · Bft ${beaufort(r.hourly.wind_gusts_10m[i])}</span></div>`);
+  $('hourlyList').innerHTML=rows.join('')||'—';
+}
+function renderDaily(days){
+  $('weatherList').innerHTML=days.length?days.map((x,i)=>`<div class="day"><span class="tag ${x.level==='strong'?'red':x.level==='medium'?'yellow':'green'}">${x.label}</span><span class="tag">${x.region}</span><h3>📅 ${new Date(x.date).toLocaleDateString('el-GR',{weekday:'short',day:'2-digit',month:'2-digit'})}</h3><div>${wxDesc(x.code)}</div><div class="muted">🌧️ ${x.rain.toFixed(1)}mm (${x.prob}%) · 💨 ${x.wind.toFixed(1)} km/h Bft ${beaufort(x.wind)} · ριπές ${x.gust.toFixed(1)} km/h Bft ${beaufort(x.gust)} · 🧭 ${degDir(x.dir)} · 🌡️ ${x.tmin.toFixed(1)}°–${x.tmax.toFixed(1)}°C ${x.uv!=null?`· ☀️ UV ${x.uv}`:''}${x.snow?` · ❄️ ${x.snow}cm`:''}</div><div class="reason"><strong>🔎 Γιατί αναμένεται αυτό:</strong> ${x.reason}</div><div class="buttons btns"><button class="main" onclick="weatherEvent('${x.region}',${i})">ΔΗΜΙΟΥΡΓΙΑ ΣΥΜΒΑΝΤΟΣ</button><button onclick="shareWeather(${i})">ΚΟΙΝΟΠΟΙΗΣΗ</button></div></div>`).join(''):'<div class="muted">Δεν υπάρχουν ημέρες.</div>'; window._flatDays=days;
+}
+function renderModelMatrix(r){
+  let el=$('modelMatrix'); if(!el)return; let cards=[]; const src=r?.models||{};
+  Object.entries(src).forEach(([name,j])=>{ let h=j.hourly; if(!h||!h.temperature_2m?.length)return; let k=Math.min(24,h.temperature_2m.length-1); cards.push(`<div class="card"><h3>🌐 ${name}</h3><div class="kv"><span>+24h</span><span>${h.temperature_2m[k]?.toFixed?.(1)??h.temperature_2m[k]}°C · 💨 ${h.wind_speed_10m[k]?.toFixed?.(1)??h.wind_speed_10m[k]} km/h · 🌧️ ${h.precipitation[k]?.toFixed?.(1)??h.precipitation[k]}mm</span></div><div class="muted">Πηγή: Open-Meteo / ${name} · MODEL DATA</div></div>`); });
+  if(r?.openWeather&&!r.openWeather.error) cards.push(`<div class="card"><h3>☁️ OpenWeather</h3><div class="kv"><span>Current</span><span>${r.openWeather.current.temperature_2m.toFixed(1)}°C · ${r.openWeather.description}</span></div><div class="muted">SUPPLEMENTARY API / CROSS-CHECK</div></div>`);
+  const errs=Object.entries(r?.modelErrors||{}).map(([n,e])=>`<div class="card"><h3>⚪ ${n}</h3><div class="muted">UNAVAILABLE — ${e}</div></div>`);
+  el.innerHTML=(cards.concat(errs).join(''))||'<div class="muted">Δεν επέστρεψαν ανεξάρτητα model feeds.</div>';
+}
+function weatherEvent(regionName,i){ let x=window._flatDays[i]; newEvent(); $('type').value='⚠️ Κακοκαιρία'; $('area').value=x.region; $('start').value=x.date+'T08:00'; $('end').value=x.date+'T20:00'; $('lat').value=x.lat.toFixed(6); $('lon').value=x.lon.toFixed(6); $('intensity').value=x.level==='strong'?'Ακραίο':x.level==='medium'?'Ισχυρό':'Μέτριο'; $('description').value=`${x.label}. ${wxDesc(x.code)}. Λόγος: ${x.reason}. Βροχή ${x.rain}mm (${x.prob}%), άνεμος ${x.wind}km/h, ριπές ${x.gust}km/h.`; $('source').value='Open-Meteo + multi-model'; }
+async function shareWeather(i){ let x=window._flatDays[i]; let t=`⚠️ ${x.label}\nΠεριοχή: ${x.region}\nΗμερομηνία: ${new Date(x.date).toLocaleDateString('el-GR')}\n${wxDesc(x.code)}\n🔎 Λόγος: ${x.reason}\n🌧️ ${x.rain}mm (${x.prob}%) · 💨 ${x.wind}km/h · ριπές ${x.gust}km/h`; if(navigator.share){try{await navigator.share({title:'Ενημέρωση καιρού',text:t});}catch(_){}}else{await navigator.clipboard?.writeText(t);toast('Αντιγράφηκε.');}}
+$('timer') && ($('timer').onchange = e=>{ clearInterval(weatherTimer); if (+e.target.value) weatherTimer=setInterval(()=>loadWeather(false), +e.target.value*60000); });
+
+/* ===================== RISK ENGINE ===================== */
+function scoreLevel(s){ return s>=75?'EXTREME':s>=55?'HIGH':s>=30?'MODERATE':'LOW'; }
+function clamp100(n){ return Math.max(0, Math.min(100, Math.round(n))); }
+
+function computeFire(d){
+  let reasons=[];
+  let t = d.tmax, rh = d.minRh!=null?d.minRh:null, gust=d.gust, rain=d.rain;
+  let s = 0;
+  if (t>=38){s+=30;reasons.push('πολύ υψηλή θερμοκρασία');} else if (t>=33){s+=22;reasons.push('υψηλή θερμοκρασία');} else if (t>=28){s+=12;} 
+  if (rh!=null){ if (rh<=20){s+=30;reasons.push('πολύ χαμηλή υγρασία');} else if (rh<=30){s+=22;reasons.push('χαμηλή υγρασία');} else if (rh<=45){s+=10;} }
+  if (gust>=60){s+=25;reasons.push('ισχυρές ριπές ανέμου');} else if (gust>=40){s+=15;reasons.push('αυξημένος άνεμος');} else if (gust>=25){s+=8;}
+  if (rain<=0){s+=15;reasons.push('απουσία βροχόπτωσης');} else if (rain<2){s+=8;}
+  if (!reasons.length) reasons.push('ήπιες συνθήκες');
+  return {key:'fire', label:'🔥 FIRE RISK', score:clamp100(s), reasons};
+}
+function computeFlood(d){
+  let reasons=[]; let s=0;
+  if (d.rain>=60){s+=50;reasons.push('πολύ έντονη βροχόπτωση (>60mm)');}
+  else if (d.rain>=30){s+=35;reasons.push('έντονη βροχόπτωση');}
+  else if (d.rain>=15){s+=20;reasons.push('σημαντική βροχόπτωση');}
+  else if (d.rain>=5){s+=8;}
+  if (d.prob>=80){s+=25;reasons.push('πολύ υψηλή πιθανότητα βροχής');} else if (d.prob>=60){s+=15;} else if (d.prob>=40){s+=8;}
+  if (!reasons.length) reasons.push('χαμηλή αναμενόμενη βροχόπτωση');
+  return {key:'flood', label:'🌊 FLOOD RISK', score:clamp100(s), reasons};
+}
+function computeStorm(d){
+  let reasons=[]; let s=0;
+  if ([95,96,99].includes(d.code)){s+=50;reasons.push('πρόγνωση καταιγίδας/χαλαζιού');}
+  else if ([65,67,82].includes(d.code)){s+=30;reasons.push('πρόγνωση έντονης βροχής/καταιγίδας');}
+  if (d.gust>=60){s+=30;reasons.push('πολύ ισχυρές ριπές');} else if (d.gust>=40){s+=15;reasons.push('αυξημένες ριπές');}
+  if (!reasons.length) reasons.push('δεν αναμένονται καταιγίδες');
+  return {key:'storm', label:'⛈️ STORM RISK', score:clamp100(s), reasons};
+}
+function computeWind(d){
+  let reasons=[]; let g=d.gust; let s=0;
+  if (g>=90){s=100;reasons.push('θυελλώδεις ριπές >90km/h');}
+  else if (g>=70){s=80;reasons.push('πολύ ισχυρές ριπές');}
+  else if (g>=55){s=60;reasons.push('ισχυρές ριπές');}
+  else if (g>=40){s=35;reasons.push('μέτριος-ισχυρός άνεμος');}
+  else if (g>=25){s=15;}
+  if (!reasons.length) reasons.push('ήπιος άνεμος');
+  return {key:'wind', label:'💨 WIND RISK', score:clamp100(s), reasons};
+}
+function computeHeat(d){
+  let reasons=[]; let t=d.tmax; let s=0;
+  if (t>=40){s=100;reasons.push('ακραίος καύσωνας ≥40°C');}
+  else if (t>=38){s=85;reasons.push('έντονος καύσωνας');}
+  else if (t>=35){s=65;reasons.push('καύσωνας');}
+  else if (t>=32){s=45;reasons.push('υψηλή θερμοκρασία');}
+  else if (t>=29){s=25;}
+  if (!reasons.length) reasons.push('φυσιολογική θερμοκρασία');
+  return {key:'heat', label:'🌡️ HEAT RISK', score:clamp100(s), reasons};
+}
+function computeSnow(d){
+  let reasons=[]; let s=0;
+  if ([71,73,75,77,85,86].includes(d.code)){s+=50;reasons.push('πρόγνωση χιονόπτωσης/παγετού');}
+  if (d.tmin<=0){s+=25;reasons.push('θερμοκρασία υπό το μηδέν');} else if (d.tmin<=3){s+=12;}
+  if (d.snow>0){s+=Math.min(25,d.snow*3);reasons.push('αναμενόμενη συσσώρευση χιονιού');}
+  if (!reasons.length) reasons.push('δεν αναμένεται χιόνι/παγετός');
+  return {key:'snow', label:'❄️ SNOW/ICE RISK', score:clamp100(s), reasons};
+}
+function computeVisibility(d){
+  let reasons=[]; let s=0;
+  if ([45,48].includes(d.code)){s+=55;reasons.push('πρόγνωση ομίχλης');}
+  if (d.rain>=10){s+=20;reasons.push('έντονη βροχή μειώνει την ορατότητα');}
+  if (!reasons.length) reasons.push('καλή αναμενόμενη ορατότητα');
+  return {key:'visibility', label:'🌫️ VISIBILITY RISK', score:clamp100(s), reasons};
+}
+function computeSeismic(){
+  let reasons=[]; let s=0;
+  if (!window._lastQuakes || !window._lastQuakes.length){
+    return {key:'seismic', label:'🌎 SEISMIC ACTIVITY', score:0, reasons:['UNAVAILABLE — δεν έχει γίνει αναζήτηση σεισμών'], unavailable:true};
+  }
+  let maxMag = Math.max(...window._lastQuakes.map(q=>q.properties.mag||0));
+  if (maxMag>=6){s=90;reasons.push('καταγράφηκε σεισμός Μ≥6.0 στην περιοχή αναζήτησης');}
+  else if (maxMag>=5){s=70;reasons.push('καταγράφηκε σεισμός Μ≥5.0');}
+  else if (maxMag>=4){s=45;reasons.push('καταγράφηκε σεισμός Μ≥4.0');}
+  else if (maxMag>=3){s=20;reasons.push('μικρής έντασης σεισμική δραστηριότητα');}
+  else reasons.push('καμία αξιοσημείωτη σεισμική δραστηριότητα');
+  return {key:'seismic', label:'🌎 SEISMIC ACTIVITY', score:clamp100(s), reasons};
+}
+let lastRisk = [];
+function computeAllRisk(manual){
+  let regions = Object.values(weatherByRegion);
+  if (!regions.length){
+    lastRisk = ['fire','flood','storm','wind','heat','snow','visibility'].map(k=>({key:k,label:k,score:0,reasons:['Χωρίς δεδομένα καιρού — φόρτωσε πρόγνωση'],unavailable:true}));
+    lastRisk.push(computeSeismic());
+    if (manual) renderRisk();
+    return;
+  }
+  const fns = [computeFire, computeFlood, computeStorm, computeWind, computeHeat, computeSnow, computeVisibility];
+  let combined = fns.map(fn=>{
+    let best=null;
+    regions.forEach(r=>{ let d = r.daily[0]; if (!d) return; let res = fn(d); res.region=r.name; if (!best || res.score>best.score) best=res; });
+    return best;
+  });
+  combined.push(computeSeismic());
+  lastRisk = combined;
+  renderHome();
+  rebuildAlerts();
+  if (manual || $('risk').classList.contains('on')) renderRisk();
+}
+function riskColor(level){ return level==='EXTREME'?'#e94d5d':level==='HIGH'?'#f0862f':level==='MODERATE'?'#e5b934':'#2dc88b'; }
+function renderRisk(){
+  $('riskList').innerHTML = lastRisk.map(r=>{
+    let lvl = scoreLevel(r.score);
+    return `<div class="panel">
+      <h3>${r.label} — ${r.unavailable?'UNAVAILABLE':r.score+'/100'} — <span class="risklevel-${lvl}">${r.unavailable?'':lvl}</span></h3>
+      <div class="gaugewrap"><div class="gauge" style="width:${r.score}%;background:${riskColor(lvl)}"></div></div>
+      ${r.region?`<div class="muted">Χειρότερη περιοχή: ${r.region}</div>`:''}
+      <div class="muted">Λόγοι: ${r.reasons.join(', ')}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ===================== ALERT CENTER ===================== */
+function rebuildAlerts(){
+  lastRisk.forEach(r=>{
+    if (r.unavailable) return;
+    let lvl = scoreLevel(r.score);
+    if (lvl==='HIGH' || lvl==='EXTREME'){
+      upsertAlert('risk-'+r.key, 'Risk Engine', lvl, `${r.label}: ${r.score}/100 (${lvl}) — ${r.reasons.join(', ')}`, r.region||'—');
+    } else {
+      resolveAlertBySource('risk-'+r.key);
+    }
+  });
+  let thresh = parseFloat($('qAlertThresh')?.value || 4.5);
+  (window._lastQuakes||[]).forEach(q=>{
+    if ((q.properties.mag||0) >= thresh){
+      upsertAlert('quake-'+q.id, 'Earthquake', 'HIGH', `Σεισμός Μ${q.properties.mag} — ${q.properties.place||'Άγνωστη τοποθεσία'}`, q.properties.place||'—');
+    }
+  });
+  if (!connState.internet) upsertAlert('conn-internet','Connectivity','MODERATE','Απώλεια σύνδεσης Internet — λειτουργία OFFLINE','Σύστημα');
+  else resolveAlertBySource('conn-internet');
+  persist();
+  if ($('alerts') && $('alerts').classList.contains('on')) renderAlerts();
+}
+function upsertAlert(sourceId, source, severity, message, area){
+  let existing = db.alerts.find(a=>a.sourceId===sourceId && !a.resolved);
+  if (existing){ existing.message=message; existing.severity=severity; existing.updated=new Date().toISOString(); return; }
+  db.alerts.unshift({ id:uid(), sourceId, source, severity, message, area, timestamp:new Date().toISOString(), acknowledged:false, resolved:false });
+  log('Alert', `${source}: ${message}`);
+}
+function resolveAlertBySource(sourceId){
+  db.alerts.filter(a=>a.sourceId===sourceId && !a.resolved).forEach(a=>{ a.resolved=true; a.resolvedAt=new Date().toISOString(); });
+}
+function ackAlert(id){ let a=db.alerts.find(x=>x.id===id); if(a){ a.acknowledged=true; persist(); renderAlerts(); log('Alert','ACK: '+a.message); } }
+function resolveAlert(id){ let a=db.alerts.find(x=>x.id===id); if(a){ a.resolved=true; a.resolvedAt=new Date().toISOString(); persist(); renderAlerts(); } }
+function clearResolvedAlerts(){ db.alerts = db.alerts.filter(a=>!a.resolved); persist(); renderAlerts(); }
+function renderAlerts(){
+  let active = db.alerts.filter(a=>!a.resolved);
+  let resolved = db.alerts.filter(a=>a.resolved).slice(0,20);
+  let sevClass = s => s==='EXTREME'||s==='HIGH' ? 'strong' : s==='MODERATE' ? 'medium' : '';
+  $('alertsList').innerHTML =
+    `<div class="panel"><h3>Ενεργές (${active.length})</h3></div>` +
+    (active.length ? active.map(a=>`
+      <div class="card ${sevClass(a.severity)}">
+        <span class="tag ${a.severity==='HIGH'||a.severity==='EXTREME'?'red':'yellow'}">${a.severity}</span>
+        <span class="tag">${a.source}</span>
+        <div class="muted">${new Date(a.timestamp).toLocaleString('el-GR')} · ${a.area||''}</div>
+        <div>${a.message}</div>
+        <div class="btns">
+          ${a.acknowledged?'<span class="tag green">ACK</span>':`<button onclick="ackAlert('${a.id}')">ACKNOWLEDGE</button>`}
+          <button class="bad" onclick="resolveAlert('${a.id}')">RESOLVE</button>
+        </div>
+      </div>`).join('') : '<div class="panel muted">Καμία ενεργή ειδοποίηση.</div>') +
+    `<div class="panel"><h3>Ιστορικό (${resolved.length})</h3></div>` +
+    resolved.map(a=>`<div class="card done"><span class="tag">${a.source}</span> ${a.message} <span class="muted">— επιλύθηκε ${new Date(a.resolvedAt).toLocaleString('el-GR')}</span></div>`).join('');
+}
+
+/* ===================== EARTHQUAKES ===================== */
+let quakeAutoTimer = null;
+async function getQuakes(){
+  let u = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${$('qlat').value}&longitude=${$('qlon').value}&maxradiuskm=${$('qr').value}&minmagnitude=${$('qmin').value}&maxmagnitude=${$('qmax').value}&starttime=${encodeURIComponent(new Date(Date.now()-+$('qh').value*3600000).toISOString())}`;
+  $('quakeInfo').textContent = 'Λήψη δεδομένων USGS…';
+  try {
+    let j = await fetch(u).then(r=>r.json());
+    window._lastQuakes = j.features;
+    $('quakeInfo').textContent = `LIVE — Βρέθηκαν ${j.features.length} σεισμοί (USGS).`;
+    $('quakeList').innerHTML = j.features.length ? j.features
+      .sort((a,b)=>b.properties.mag-a.properties.mag)
+      .map(q=>`<div class="card ${q.properties.mag>=5?'strong':q.properties.mag>=4?'medium':''}">
+        <b>Μέγεθος ${q.properties.mag}</b>
+        <h3>${q.properties.place||'Άγνωστο'}</h3>
+        <div class="muted">Βάθος ${q.geometry.coordinates[2]}km · ${new Date(q.properties.time).toLocaleString('el-GR')}</div>
+        <div class="btns"><button class="main" onclick="quakeToIncident('${q.id}')">ΔΗΜΙΟΥΡΓΙΑ ΣΥΜΒΑΝΤΟΣ</button></div>
+      </div>`).join('') : '<div class="panel muted">Δεν βρέθηκαν σεισμοί στα κριτήρια αναζήτησης.</div>';
+    computeAllRisk();
+    log('Earthquake', `Αναζήτηση σεισμών: ${j.features.length} αποτελέσματα`);
+  } catch(e){
+    $('quakeInfo').textContent = 'ΑΠΟΤΥΧΙΑ λήψης δεδομένων (OFFLINE/UNAVAILABLE).';
+  }
+}
+function quakeToIncident(id){
+  let q = (window._lastQuakes||[]).find(x=>x.id===id);
+  if (!q) return;
+  newEvent();
+  $('type').value='🌎 Σεισμός';
+  $('area').value = q.properties.place || 'Άγνωστη περιοχή';
+  $('lat').value = q.geometry.coordinates[1].toFixed(6);
+  $('lon').value = q.geometry.coordinates[0].toFixed(6);
+  $('start').value = new Date(q.properties.time).toISOString().slice(0,16);
+  $('description').value = `Σεισμός μεγέθους ${q.properties.mag}, βάθος ${q.geometry.coordinates[2]}km.`;
+  $('source').value = 'USGS';
+  $('intensity').value = q.properties.mag>=6?'Ακραίο':q.properties.mag>=5?'Πολύ ισχυρό':'Ισχυρό';
+}
+function toggleQuakeAuto(){
+  if (quakeAutoTimer){ clearInterval(quakeAutoTimer); quakeAutoTimer=null; $('qAutoLabel').textContent='▶ ΑΥΤΟΜΑΤΗ ΑΝΑΝΕΩΣΗ (5\')'; }
+  else { quakeAutoTimer=setInterval(getQuakes,300000); $('qAutoLabel').textContent='⏸ ΕΝΕΡΓΗ ΑΥΤΟΜΑΤΗ ΑΝΑΝΕΩΣΗ'; getQuakes(); }
+}
+
+/* ===================== EVENTS / INCIDENTS ===================== */
+function newEvent(){
+  go('editor');
+  $('editorTitle').textContent='Νέο συμβάν';
+  $('id').value='';
+  $('estatus').value='NEW'; $('epriority').value='Κανονική';
+  $('start').value=new Date().toISOString().slice(0,16);
+  ['area','lat','lon','description','instructions','source','responsible','enotes'].forEach(x=>$(x).value='');
+  $('end').value='';
+  fillVehicleAssignSelect('');
+}
+function fillVehicleAssignSelect(selected){
+  $('eassignVehicle').innerHTML = '<option value="">—</option>' + db.vehicles.map(v=>`<option value="${v.id}" ${v.id===selected?'selected':''}>${v.id} — ${v.type}</option>`).join('');
+}
+function saveEvent(){
+  let e = {
+    id: $('id').value || uid(),
+    type:$('type').value, status:$('estatus').value, priority:$('epriority').value,
+    area:$('area').value || 'Άγνωστη περιοχή', start:$('start').value, end:$('end').value,
+    lat:$('lat').value, lon:$('lon').value, intensity:$('intensity').value,
+    description:$('description').value, instructions:$('instructions').value, source:$('source').value,
+    responsible:$('responsible').value, vehicle:$('eassignVehicle').value, notes:$('enotes').value,
+    timeline: []
+  };
+  let i = db.events.findIndex(x=>x.id===e.id);
+  if (i<0){ e.timeline=[{t:new Date().toISOString(),msg:'Δημιουργία συμβάντος'}]; db.events.unshift(e); log('Incident', `Δημιουργία συμβάντος: ${e.type} — ${e.area}`); }
+  else { e.timeline = (db.events[i].timeline||[]).concat([{t:new Date().toISOString(),msg:'Ενημέρωση συμβάντος ('+e.status+')'}]); e.arrival = db.events[i].arrival; db.events[i]=e; log('Incident', `Ενημέρωση συμβάντος: ${e.area} → ${e.status}`); }
+  persist();
+  if (e.vehicle){ let v=db.vehicles.find(x=>x.id===e.vehicle); if (v){ v.status='EN ROUTE'; v.incident=e.id; persist(); } }
+  toast('Αποθηκεύτηκε');
+  if(i<0 && db.settings.tgAuto && db.settings.botToken && db.settings.chat){ telegramSend(e.id); }
+  computeAllRisk();
+  go('events');
+}
+function eventText(e){
+  return `🚨 ${e.type} [${e.status}]\nΠεριοχή: ${e.area}\nΣυντεταγμένες: ${e.lat||'—'}, ${e.lon||'—'}\nΑπό: ${e.start||'—'}  Έως: ${e.end||'—'}\nΥπεύθυνος: ${e.responsible||'—'}\n${e.description||''}`;
+}
+function renderEvents(){
+  let a = db.events;
+  $('eventsList').innerHTML = a.length ? a.map(e=>`
+    <div class="card ${e.status==='COMPLETED'?'done':e.priority==='Κρίσιμη'?'strong':''}">
+      <span class="tag">${e.type}</span><span class="tag ${e.status==='COMPLETED'?'green':''}">${e.status}</span><span class="tag">${e.priority}</span>
+      <h3>${e.area}</h3>
+      <div class="muted">📍 ${e.lat&&e.lon?e.lat+', '+e.lon:'Χωρίς συντεταγμένες'}<br>${e.start||'—'} — ${e.end||'—'}${e.vehicle?' · Όχημα: '+e.vehicle:''}</div>
+      <div>${e.description||''}</div>
+      <div class="buttons btns">
+        <button onclick="editEvent('${e.id}')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
+        <button onclick="navigateTo('${e.id}')">🧭 ΣΤΟ ΣΗΜΕΙΟ</button>
+        <button onclick="previewEvent('${e.id}')">ΠΡΟΕΠΙΣΚΟΠΗΣΗ</button>
+        <button class="main" onclick="telegramSend('${e.id}')">TELEGRAM</button>
+        <button class="good" onclick="completeEvent('${e.id}')">ΟΛΟΚΛΗΡΩΣΗ</button>
+        <button class="bad" onclick="removeEvent('${e.id}')">ΔΙΑΓΡΑΦΗ</button>
+      </div>
+      <div class="buttons btns"><button class="main" onclick="arrivedEvent('${e.id}')">📍 ΕΦΤΑΣΕ ΤΟ ΟΧΗΜΑ — GPS &amp; TELEGRAM</button></div>
+    </div>`).join('') : '<div class="panel muted">Δεν υπάρχουν συμβάντα.</div>';
+}
+function editEvent(id){
+  let e = db.events.find(x=>x.id===id);
+  go('editor'); $('editorTitle').textContent='Επεξεργασία συμβάντος';
+  fillVehicleAssignSelect(e.vehicle||'');
+  Object.entries({id:e.id,type:e.type,area:e.area,start:e.start,end:e.end,lat:e.lat,lon:e.lon,intensity:e.intensity,
+    description:e.description,instructions:e.instructions,source:e.source,responsible:e.responsible,enotes:e.notes}).forEach(([k,v])=>{ if($(k)) $(k).value=v||''; });
+  $('estatus').value=e.status||'NEW'; $('epriority').value=e.priority||'Κανονική';
+}
+function gps(a,b,isSettings){
+  if (!navigator.geolocation) return toast('Δεν υπάρχει GPS σε αυτή τη συσκευή');
+  navigator.geolocation.getCurrentPosition(p=>{
+    $(a).value=p.coords.latitude.toFixed(6); $(b).value=p.coords.longitude.toFixed(6);
+    connState.gps='ok'; renderConnBar();
+    if (isSettings){ db.settings.lastKnownLoc={lat:$(a).value,lon:$(b).value,t:new Date().toISOString()}; persist(); $('lastKnownLoc').textContent='Τελευταία γνωστή θέση: '+$(a).value+', '+$(b).value; }
+    toast('Λήφθηκε θέση');
+  }, ()=>{ connState.gps='bad'; renderConnBar(); toast('Δεν δόθηκε άδεια GPS'); }, {enableHighAccuracy: db.settings.gpsAcc!=='low', maximumAge:0, timeout:20000});
+}
+function mapPoint(){ if (!$('lat').value||!$('lon').value) return toast('Συμπλήρωσε συντεταγμένες'); window.open(`https://www.google.com/maps/search/?api=1&query=${$('lat').value},${$('lon').value}`,'_blank'); }
+function navigateTo(id){ let e=db.events.find(x=>x.id===id); if (!e.lat||!e.lon) return toast('Δεν υπάρχουν συντεταγμένες'); window.open(`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lon}`,'_blank'); }
+function previewEvent(id){ alert(eventText(db.events.find(x=>x.id===id))); }
+function completeEvent(id){ let e=db.events.find(x=>x.id===id); if (confirm('Ολοκλήρωση συμβάντος;')){ e.status='COMPLETED'; e.timeline=(e.timeline||[]).concat([{t:new Date().toISOString(),msg:'Ολοκλήρωση'}]); persist(); renderEvents(); log('Incident','Ολοκλήρωση: '+e.area); } }
+function removeEvent(id){ if (confirm('Οριστική διαγραφή;')){ let e=db.events.find(x=>x.id===id); db.events=db.events.filter(x=>x.id!==id); persist(); renderEvents(); log('Incident','Διαγραφή συμβάντος: '+(e?e.area:id)); } }
+async function telegramSend(id){
+  let e=db.events.find(x=>x.id===id); if(!e) return toast('Το συμβάν δεν βρέθηκε');
+  let t=eventText(e);
+  try{ await sendTelegramText(t); log('Telegram','Απεστάλη πραγματικό μήνυμα για '+e.area); toast('Στάλθηκε στο Telegram'); }
+  catch(err){ log('Telegram','Αποτυχία για '+e.area+': '+err.message); toast('Αποτυχία Telegram: '+err.message); }
+}
+async function arrivedEvent(id){
+  let e = db.events.find(x=>x.id===id);
+  if (!navigator.geolocation) return toast('Δεν υπάρχει GPS');
+  navigator.geolocation.getCurrentPosition(async p=>{
+    let lat=p.coords.latitude.toFixed(6), lon=p.coords.longitude.toFixed(6), time=new Date().toLocaleString('el-GR');
+    let t = `✅ ΑΦΙΞΗ ΟΧΗΜΑΤΟΣ\nΣυμβάν: ${e.type}\nΠεριοχή: ${e.area}\n📍 ${lat}, ${lon}\n🕒 ${time}\n🗺️ https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    e.arrival = {lat,lon,time:new Date().toISOString()};
+    e.timeline = (e.timeline||[]).concat([{t:new Date().toISOString(),msg:'Άφιξη οχήματος (GPS)'}]);
+    persist(); log('Incident', 'Άφιξη οχήματος: '+e.area);
+    try{ await sendTelegramText(t); log('Telegram','Άφιξη εστάλη πραγματικά'); toast('Άφιξη στάλθηκε στο Telegram'); return; }catch(err){ log('Telegram','Αποτυχία άφιξης Telegram: '+err.message); }
+    if (navigator.share) await navigator.share({title:'Άφιξη οχήματος', text:t});
+    else { await navigator.clipboard?.writeText(t); toast('Καταγράφηκε και αντιγράφηκε — Telegram μη διαθέσιμο'); }
+  }, ()=>toast('Δεν δόθηκε άδεια GPS'), {enableHighAccuracy:true, maximumAge:0, timeout:20000});
+}
+
+/* ===================== HOME DASHBOARD ===================== */
+function renderHome(){
+  let regions = Object.values(weatherByRegion);
+  if (regions.length){
+    let r = weatherByRegion[$('region')?.value] || regions[0];
+    if (r && r.current) $('homeWeatherNow').innerHTML = `${r.name}: ${r.current.temperature_2m}°C, ${wxDesc(r.current.weather_code)}, άνεμος ${r.current.wind_speed_10m}km/h (ριπές ${r.current.wind_gusts_10m}km/h), υγρασία ${r.current.relative_humidity_2m}%`;
+  } else $('homeWeatherNow').textContent = 'Δεν έχουν φορτωθεί δεδομένα καιρού.';
+  if (lastRisk.length){
+    $('homeRisks').innerHTML = lastRisk.map(r=>{
+      let lvl = r.unavailable?'—':scoreLevel(r.score);
+      return `<div class="kv"><span>${r.label}</span><span class="${lvl!=='—'?'risklevel-'+lvl:''}">${r.unavailable?'UNAVAILABLE':r.score+'/100 · '+lvl}</span></div>`;
+    }).join('');
+  }
+  let active = db.events.filter(e=>e.status!=='COMPLETED');
+  $('homeIncidents').innerHTML = active.length ? active.slice(0,6).map(e=>`<div class="kv"><span>${e.type} — ${e.area}</span><span>${e.status}</span></div>`).join('') + (active.length>6?`<div class="muted">+${active.length-6} ακόμη…</div>`:'') : 'Καμία ενεργή επιχείρηση.';
+  renderHomeConn();
+}
+function renderHomeConn(){
+  $('homeConn').innerHTML =
+    `<div class="kv"><span>GPS</span><span>${connState.gps==='ok'?'🟢 ACTIVE':connState.gps==='bad'?'🔴 OFFLINE':'🟡 —'}</span></div>
+     <div class="kv"><span>Internet</span><span>${connState.internet?'🟢 ONLINE':'🔴 OFFLINE'}</span></div>
+     <div class="kv"><span>Backend</span><span>${db.settings.endpoint?(connState.backend==='ok'?'🟢 ONLINE':'🔴 OFFLINE'):'⚪ NOT CONFIGURED'}</span></div>
+     <div class="kv"><span>Telegram</span><span>${db.settings.chat&&db.settings.endpoint?'🟢 CONFIGURED':'⚪ NOT CONFIGURED'}</span></div>
+     <div class="kv"><span>Bluetooth</span><span>${connState.bluetooth==='available'?'🟢 ΥΠΟΣΤΗΡΙΖΕΤΑΙ':'🔴 ΜΗ ΔΙΑΘΕΣΙΜΟ'}</span></div>`;
+}
+
+/* ===================== FORCES ===================== */
+function addForce(){
+  if (!$('fname').value) return toast('Συμπλήρωσε όνομα');
+  db.forces.unshift({id:uid(), name:$('fname').value, role:$('frole').value, shift:$('fshift').value, contact:$('fcontact').value, status:$('fstatus').value});
+  persist(); log('Forces','Προσθήκη: '+$('fname').value);
+  ['fname','frole','fshift','fcontact'].forEach(x=>$(x).value='');
+  renderForces();
+}
+function removeForce(id){ db.forces=db.forces.filter(x=>x.id!==id); persist(); renderForces(); }
+function setForceStatus(id,s){ let f=db.forces.find(x=>x.id===id); f.status=s; persist(); renderForces(); }
+function renderForces(){
+  $('forcesList').innerHTML = db.forces.length ? db.forces.map(f=>`
+    <div class="card">
+      <span class="tag ${f.status==='AVAILABLE'?'green':f.status==='BUSY'?'yellow':'red'}">${f.status}</span>
+      <h3>${f.name} <span class="muted">${f.role||''}</span></h3>
+      <div class="muted">Βάρδια: ${f.shift||'—'} · Επικοινωνία: ${f.contact||'—'}</div>
+      <div class="btns">
+        <button onclick="setForceStatus('${f.id}','AVAILABLE')">AVAILABLE</button>
+        <button onclick="setForceStatus('${f.id}','BUSY')">BUSY</button>
+        <button onclick="setForceStatus('${f.id}','UNAVAILABLE')">UNAVAILABLE</button>
+        <button class="bad" onclick="removeForce('${f.id}')">ΔΙΑΓΡΑΦΗ</button>
+      </div>
+    </div>`).join('') : '<div class="panel muted">Δεν υπάρχει καταχωρημένο προσωπικό.</div>';
+}
+
+/* ===================== VEHICLES ===================== */
+function addVehicle(){
+  if (!$('vid').value) return toast('Συμπλήρωσε ID οχήματος');
+  db.vehicles.unshift({id:$('vid').value, type:$('vtype').value, crew:$('vcrew').value, status:$('vstatus').value, fuel:+$('vfuel').value||100, equip:$('vequip').value, incident:null, updated:new Date().toISOString()});
+  persist(); log('Vehicles','Προσθήκη οχήματος: '+$('vid').value);
+  ['vid','vtype','vcrew','vequip'].forEach(x=>$(x).value=''); $('vfuel').value=100;
+  renderVehicles();
+}
+function removeVehicle(id){ db.vehicles=db.vehicles.filter(x=>x.id!==id); persist(); renderVehicles(); }
+function setVehicleStatus(id,s){ let v=db.vehicles.find(x=>x.id===id); v.status=s; v.updated=new Date().toISOString(); persist(); renderVehicles(); }
+function renderVehicles(){
+  $('vehiclesList').innerHTML = db.vehicles.length ? db.vehicles.map(v=>`
+    <div class="card">
+      <span class="tag ${v.status==='AVAILABLE'?'green':v.status==='OUT OF SERVICE'?'red':'yellow'}">${v.status}</span>
+      <h3>${v.id} — ${v.type||'—'}</h3>
+      <div class="muted">Πλήρωμα: ${v.crew||'—'} · Καύσιμο: ${v.fuel}% · Ενημέρωση: ${new Date(v.updated).toLocaleString('el-GR')}</div>
+      ${v.equip?`<div class="muted">Εξοπλισμός: ${v.equip}</div>`:''}
+      <div class="btns">
+        <button onclick="setVehicleStatus('${v.id}','AVAILABLE')">AVAILABLE</button>
+        <button onclick="setVehicleStatus('${v.id}','EN ROUTE')">EN ROUTE</button>
+        <button onclick="setVehicleStatus('${v.id}','ON SCENE')">ON SCENE</button>
+        <button onclick="setVehicleStatus('${v.id}','OUT OF SERVICE')">OUT OF SERVICE</button>
+        <button class="bad" onclick="removeVehicle('${v.id}')">ΔΙΑΓΡΑΦΗ</button>
+      </div>
+    </div>`).join('') : '<div class="panel muted">Δεν υπάρχουν καταχωρημένα οχήματα.</div>';
+}
+
+/* ===================== INVENTORY ===================== */
+function addItem(){
+  if (!$('itemName').value) return toast('Συμπλήρωσε είδος');
+  db.inventory.unshift({id:uid(), name:$('itemName').value, cat:$('itemCat').value, qty:+$('itemQty').value||0, min:+$('itemMin').value||0, status:$('itemStatus').value});
+  persist(); log('Inventory','Προσθήκη: '+$('itemName').value);
+  ['itemName','itemCat'].forEach(x=>$(x).value=''); $('itemQty').value=1; $('itemMin').value=1;
+  renderInventory();
+}
+function removeItem(id){ db.inventory=db.inventory.filter(x=>x.id!==id); persist(); renderInventory(); }
+function adjustQty(id,delta){ let it=db.inventory.find(x=>x.id===id); it.qty=Math.max(0,it.qty+delta); if (it.qty<=it.min) it.status='LOW STOCK'; else if (it.status==='LOW STOCK') it.status='AVAILABLE'; persist(); renderInventory(); }
+function renderInventory(){
+  $('inventoryList').innerHTML = db.inventory.length ? db.inventory.map(it=>`
+    <div class="card">
+      <span class="tag ${it.status==='AVAILABLE'?'green':it.status==='LOW STOCK'?'yellow':'red'}">${it.status}</span>
+      <h3>${it.name} <span class="muted">${it.cat||''}</span></h3>
+      <div class="muted">Ποσότητα: ${it.qty} (ελάχ. ${it.min})</div>
+      <div class="btns">
+        <button onclick="adjustQty('${it.id}',-1)">－</button>
+        <button onclick="adjustQty('${it.id}',1)">＋</button>
+        <button class="bad" onclick="removeItem('${it.id}')">ΔΙΑΓΡΑΦΗ</button>
+      </div>
+    </div>`).join('') : '<div class="panel muted">Δεν υπάρχει καταχωρημένος εξοπλισμός.</div>';
+}
+
+/* ===================== MAP (Leaflet, no key needed) ===================== */
+let leafletMap=null, currentTileLayer=null, mapMarkersLayer=null;
+function initMapIfNeeded(){
+  if (leafletMap) { setTimeout(()=>leafletMap.invalidateSize(),150); renderMapMarkers(); return; }
+  if (typeof L==='undefined'){ $('mapStatus').textContent='Η βιβλιοθήκη χάρτη δεν φορτώθηκε (OFFLINE).'; return; }
+  leafletMap = L.map('leafletMap').setView([R.oropos[1],R.oropos[2]], 11);
+  setLayer('osm');
+  mapMarkersLayer = L.layerGroup().addTo(leafletMap);
+  renderMapMarkers();
+  $('mapStatus').textContent='LIVE — OpenStreetMap tiles.';
+}
+const TILE_DEFS = {
+  osm: { url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attr:'&copy; OpenStreetMap contributors', label:'OpenStreetMap' },
+  sat: { url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr:'Tiles &copy; Esri', label:'Satellite (Esri World Imagery)' },
+  topo: { url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr:'&copy; OpenTopoMap (CC-BY-SA)', label:'Terrain (OpenTopoMap)' }
+};
+async function setLayer(kind){
+  if (!leafletMap) return;
+  if (currentTileLayer) leafletMap.removeLayer(currentTileLayer);
+  if (kind==='rain'){
+    try{
+      let meta = await fetch('https://api.rainviewer.com/public/weather-maps.json').then(r=>r.json());
+      let last = meta.radar.past[meta.radar.past.length-1];
+      currentTileLayer = L.tileLayer(`https://tilecache.rainviewer.com${last.path}/256/{z}/{x}/{y}/2/1_1.png`,{attribution:'RainViewer', opacity:0.7});
+      currentTileLayer.addTo(leafletMap);
+      $('mapStatus').textContent='LIVE — RainViewer rain radar (δημόσιο, χωρίς κλειδί).';
+    }catch(e){ $('mapStatus').textContent='Rain radar: UNAVAILABLE (offline ή αποτυχία API).'; }
+    return;
+  }
+  let def = TILE_DEFS[kind] || TILE_DEFS.osm;
+  currentTileLayer = L.tileLayer(def.url, {attribution:def.attr, maxZoom:19});
+  currentTileLayer.addTo(leafletMap);
+  $('mapStatus').textContent = 'LIVE — '+def.label+'.';
+}
+function centerOropos(){ if (leafletMap) leafletMap.setView([R.oropos[1],R.oropos[2]], 12); }
+function centerGPS(){
+  if (!navigator.geolocation) return toast('Δεν υπάρχει GPS');
+  navigator.geolocation.getCurrentPosition(p=>{
+    leafletMap.setView([p.coords.latitude,p.coords.longitude], 14);
+    L.marker([p.coords.latitude,p.coords.longitude]).addTo(mapMarkersLayer).bindPopup('Η θέση μου');
+    connState.gps='ok'; renderConnBar();
+  }, ()=>toast('Δεν δόθηκε άδεια GPS'));
+}
+function renderMapMarkers(){
+  if (!mapMarkersLayer) return;
+  mapMarkersLayer.clearLayers();
+  if ($('lyEvents')?.checked) db.events.filter(e=>e.lat&&e.lon).forEach(e=>{
+    L.marker([+e.lat,+e.lon]).addTo(mapMarkersLayer).bindPopup(`${e.type}<br>${e.area}<br>${e.status}`);
+  });
+  if ($('lyQuakes')?.checked) (window._lastQuakes||[]).forEach(q=>{
+    L.circleMarker([q.geometry.coordinates[1],q.geometry.coordinates[0]], {radius:4+q.properties.mag, color:'#e94d5d'}).addTo(mapMarkersLayer).bindPopup(`Μ${q.properties.mag} — ${q.properties.place||''}`);
+  });
+  if ($('lyFires')?.checked) (window._lastFirms||[]).forEach(f=>{
+    L.circleMarker([f.lat,f.lon], {radius:6, color:'#ff6b35', fillColor:'#ff6b35', fillOpacity:.8}).addTo(mapMarkersLayer).bindPopup(`🔥 NASA FIRMS hotspot<br>${f.date||''} ${f.time||''}<br>FRP ${f.frp||'—'} MW · confidence ${f.conf||'—'}`);
+  });
+  // vehicles have no live GPS feed in this offline-first build; shown only if an incident arrival exists
+  if ($('lyVehicles')?.checked) db.events.filter(e=>e.arrival).forEach(e=>{
+    L.marker([+e.arrival.lat,+e.arrival.lon]).addTo(mapMarkersLayer).bindPopup(`🚒 Άφιξη οχήματος<br>${e.area}`);
+  });
+}
+
+/* ===================== SETTINGS ===================== */
+function openSettings(){
+  $('botToken').value = db.settings.botToken||''; $('chat').value = db.settings.chat||''; $('endpoint').value = db.settings.endpoint||'';
+  $('tgStatus').textContent = db.settings.botToken && db.settings.chat ? 'Telegram: CONFIGURED — έτοιμο για πραγματική αποστολή' : 'Telegram: NOT CONFIGURED';
+  $('tgAuto').checked = !!db.settings.tgAuto;
+  $('setDefaultRegion').value = db.settings.defaultRegion||'oropos';
+  $('setUnits').value = db.settings.units||'metric';
+  $('setGpsAcc').value = db.settings.gpsAcc||'high';
+  $('firmsKey').value = db.settings.firmsKey||'';
+  $('openWeatherKey').value = db.settings.openWeatherKey||'';
+  $('openWeatherEnabled').checked = !!db.settings.openWeatherEnabled;
+  $('modelMode').value = db.settings.modelMode||'multi';
+  $('owStatus').textContent = db.settings.openWeatherEnabled && db.settings.openWeatherKey ? 'OpenWeather: CONFIGURED' : 'OpenWeather: NOT CONFIGURED';
+  $('pinEnabled').checked = !!db.settings.pinEnabled; $('autoScan').checked=!!db.settings.autoScan; $('autoScanMinutes').value=String(db.settings.autoScanMinutes||10); $('autoIncidentTelegram').checked=!!db.settings.autoIncidentTelegram; $('sourceTelegram').checked=!!db.settings.sourceTelegram; $('notificationEnabled').checked=!!db.settings.notificationEnabled;
+  togglePinUI();
+  $('lastKnownLoc').textContent = db.settings.lastKnownLoc ? `Τελευταία γνωστή θέση: ${db.settings.lastKnownLoc.lat}, ${db.settings.lastKnownLoc.lon} (${new Date(db.settings.lastKnownLoc.t).toLocaleString('el-GR')})` : 'Τελευταία γνωστή θέση: —';
+}
+function saveSettings(){ db.settings.botToken=$('botToken').value.trim(); db.settings.chat=$('chat').value.trim(); db.settings.endpoint=$('endpoint').value.trim(); db.settings.tgAuto=$('tgAuto').checked; persist(); $('tgStatus').textContent=db.settings.botToken&&db.settings.chat?'Telegram: CONFIGURED — έτοιμο για πραγματική αποστολή':'Telegram: NOT CONFIGURED'; toast('Αποθηκεύτηκε'); refreshConnectivity(); log('Settings','Ενημέρωση ρυθμίσεων Telegram'); }
+async function sendTelegramText(text){
+  if(db.settings.botToken && db.settings.chat){
+    const u='https://api.telegram.org/bot'+encodeURIComponent(db.settings.botToken)+'/sendMessage';
+    const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:db.settings.chat,text})});
+    let j=null; try{j=await r.json()}catch(_){}
+    if(!r.ok || !j?.ok) throw new Error(j?.description||('Telegram HTTP '+r.status));
+    return j.result;
+  }
+  if(db.settings.endpoint){
+    const r=await fetch(db.settings.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:db.settings.chat,text})});
+    if(!r.ok) throw new Error('Backend HTTP '+r.status);
+    return true;
+  }
+  throw new Error('Δεν έχει ρυθμιστεί Bot Token + Chat ID');
+}
+async function testTelegram(){
+  const text='🟢 OROPOS OPS C3 — ALL HAZARDS\nTEST MESSAGE\nΏρα: '+new Date().toLocaleString('el-GR');
+  try{ await sendTelegramText(text); $('tgStatus').textContent='Telegram: TEST OK — πραγματικό μήνυμα εστάλη'; log('Telegram','Επιτυχής δοκιμή Telegram'); toast('Το TEST στάλθηκε στο Telegram'); }
+  catch(e){ $('tgStatus').textContent='Telegram: ERROR — '+e.message; log('Telegram','TEST ERROR: '+e.message); toast('Αποτυχία Telegram: '+e.message); }
+}
+function saveGeneral(){ db.settings.defaultRegion=$('setDefaultRegion').value; db.settings.units=$('setUnits').value; db.settings.gpsAcc=$('setGpsAcc').value; persist(); $('region').value=db.settings.defaultRegion; toast('Αποθηκεύτηκε'); log('Settings','Ενημέρωση γενικών ρυθμίσεων'); }
+function saveApiKeys(){ db.settings.firmsKey=$('firmsKey').value; persist(); toast('Αποθηκεύτηκε'); log('Settings','Ενημέρωση FIRMS API key'); }
+function saveWeatherApiSettings(){ db.settings.openWeatherKey=$('openWeatherKey').value.trim(); db.settings.openWeatherEnabled=$('openWeatherEnabled').checked; db.settings.modelMode=$('modelMode').value; persist(); $('owStatus').textContent=db.settings.openWeatherEnabled&&db.settings.openWeatherKey?'OpenWeather: CONFIGURED':'OpenWeather: NOT CONFIGURED'; toast('Weather sources αποθηκεύτηκαν'); log('Settings','Ενημέρωση weather sources'); }
+async function testOpenWeather(){ if(!db.settings.openWeatherKey) return toast('Βάλε πρώτα OpenWeather API key'); let r=R[$('region')?.value||'oropos']; try{ let u=`https://api.openweathermap.org/data/2.5/weather?lat=${r[1]}&lon=${r[2]}&units=metric&lang=el&appid=${encodeURIComponent(db.settings.openWeatherKey)}`; let j=await fetch(u,{cache:'no-store'}).then(x=>{if(!x.ok) throw new Error('HTTP '+x.status);return x.json()}); $('owStatus').textContent=`OpenWeather: OK — ${j.name||r[0]} · ${Math.round(j.main?.temp??0)}°C · ${j.weather?.[0]?.description||'—'}`; toast('OpenWeather OK'); }catch(e){ $('owStatus').textContent='OpenWeather: ERROR — έλεγξε key/δικαιώματα/quota'; toast('Αποτυχία OpenWeather'); } }
+function togglePinUI(){ $('pinSetupWrap').classList.toggle('hidden', !$('pinEnabled').checked); if (!$('pinEnabled').checked){ db.settings.pinEnabled=false; db.settings.pinHash=''; persist(); } }
+async function sha256(s){ const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+async function setPin(){
+  let p = $('newPin').value; if (!p || p.length<4) return toast('Το PIN πρέπει να έχει τουλάχιστον 4 ψηφία');
+  db.settings.pinHash = await sha256(p); db.settings.pinEnabled=true; persist(); toast('Το PIN ορίστηκε'); $('newPin').value='';
+}
+async function tryUnlock(){
+  let p = $('pinInput').value; let h = await sha256(p);
+  if (h===db.settings.pinHash){ $('lockScreen').style.display='none'; $('pinInput').value=''; $('pinMsg').textContent=''; }
+  else { $('pinMsg').textContent='Λάθος PIN'; }
+}
+function checkLock(){ if (db.settings.pinEnabled && db.settings.pinHash){ $('lockScreen').style.display='flex'; } }
+
+/* ===================== BLUETOOTH (Web Bluetooth, optional) ===================== */
+function renderBluetoothPage(){
+  $('btSupport').textContent = ('bluetooth' in navigator) ? 'Web Bluetooth: ΥΠΟΣΤΗΡΙΖΕΤΑΙ σε αυτό το browser.' : 'Web Bluetooth: ΜΗ ΔΙΑΘΕΣΙΜΟ σε αυτό το browser/συσκευή (π.χ. iOS Safari δεν υποστηρίζει). Η εφαρμογή λειτουργεί κανονικά χωρίς αυτό.';
+  renderBtConnected();
+}
+async function btScan(){
+  if (!('bluetooth' in navigator)) return toast('Web Bluetooth μη διαθέσιμο σε αυτό το browser');
+  try{
+    let device = await navigator.bluetooth.requestDevice({ acceptAllDevices:true, optionalServices:['battery_service','device_information','environmental_sensing'] });
+    let entry = {id:device.id, name:device.name||'Άγνωστη συσκευή', connected:true, lastSeen:new Date().toISOString()};
+    db.bluetooth.devices = db.bluetooth.devices.filter(d=>d.id!==entry.id).concat([entry]);
+    persist(); log('Bluetooth','Σύνδεση συσκευής: '+entry.name);
+    device.addEventListener('gattserverdisconnected', ()=>{
+      let d = db.bluetooth.devices.find(x=>x.id===device.id); if (d){ d.connected=false; persist(); renderBtConnected(); log('Bluetooth','Αποσύνδεση: '+d.name); }
+    });
+    try{ await device.gatt.connect(); }catch(e){}
+    renderBtConnected();
+    toast('Συνδέθηκε: '+entry.name);
+  }catch(e){ toast('Δεν επιλέχθηκε συσκευή ή η αναζήτηση ακυρώθηκε'); }
+}
+function renderBtConnected(){
+  $('btConnected').innerHTML = db.bluetooth.devices.length ? db.bluetooth.devices.map(d=>`
+    <div class="card">
+      <span class="tag ${d.connected?'green':''}">${d.connected?'CONNECTED':'DISCONNECTED'}</span>
+      <h3>${d.name}</h3>
+      <div class="muted">Τελευταία επαφή: ${new Date(d.lastSeen).toLocaleString('el-GR')}</div>
+    </div>`).join('') : 'Καμία συσκευή συνδεδεμένη.';
+}
+
+/* ===================== DATA / EXPORT / IMPORT ===================== */
+function downloadFile(name, content, type){
+  let blob = new Blob([content], {type});
+  let a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+function exportData(fmt){
+  if (fmt==='json') downloadFile('oropos-ops-c3-backup.json', JSON.stringify(db,null,2), 'application/json');
+  else if (fmt==='csv'){
+    let rows = [['id','type','status','priority','area','lat','lon','start','end','intensity','description','responsible']];
+    db.events.forEach(e=>rows.push([e.id,e.type,e.status,e.priority,e.area,e.lat,e.lon,e.start,e.end,e.intensity,(e.description||'').replace(/\n/g,' '),e.responsible]));
+    downloadFile('oropos-events.csv', rows.map(r=>r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n'), 'text/csv');
+  }
+  log('Data','Export '+fmt.toUpperCase());
+}
+function importData(){
+  let f = $('importFile').files[0]; if (!f) return toast('Επίλεξε αρχείο JSON');
+  let reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      let incoming = JSON.parse(reader.result);
+      if (!confirm('Η εισαγωγή θα συγχωνεύσει τα δεδομένα (συμβάντα/δυνάμεις/οχήματα/υλικά). Συνέχεια;')) return;
+      ['events','forces','vehicles','inventory','alerts','log'].forEach(k=>{
+        if (Array.isArray(incoming[k])){
+          let ids = new Set(db[k].map(x=>x.id));
+          incoming[k].forEach(x=>{ if (!ids.has(x.id)) db[k].push(x); });
+        }
+      });
+      persist(); toast('Η εισαγωγή ολοκληρώθηκε'); log('Data','Import από αρχείο');
+      renderEvents(); renderForces(); renderVehicles(); renderInventory();
+    }catch(e){ toast('Μη έγκυρο αρχείο JSON'); }
+  };
+  reader.readAsText(f);
+}
+function clearCache(){
+  if (!confirm('Αυτό θα διαγράψει ΟΛΑ τα τοπικά δεδομένα της εφαρμογής. Θέλεις σίγουρα να συνεχίσεις;')) return;
+  localStorage.removeItem(DB_KEY); localStorage.removeItem('oroposOpsC3v3');
+  toast('Τα τοπικά δεδομένα διαγράφηκαν. Επαναφόρτωση…');
+  setTimeout(()=>location.reload(), 1000);
+}
+
+/* ===================== LOGBOOK ===================== */
+function renderLog(){
+  $('logList').innerHTML = db.log.length ? db.log.slice(0,300).map(l=>`<div class="kv"><span>${new Date(l.t).toLocaleString('el-GR')} — ${l.kind}</span><span class="muted">${l.msg}</span></div>`).join('') : '<div class="panel muted">Κενό.</div>';
+}
+function exportLog(fmt){
+  if (fmt==='json') downloadFile('oropos-logbook.json', JSON.stringify(db.log,null,2), 'application/json');
+  else if (fmt==='csv'){
+    let rows = [['timestamp','kind','message']].concat(db.log.map(l=>[l.t,l.kind,l.msg]));
+    downloadFile('oropos-logbook.csv', rows.map(r=>r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n'), 'text/csv');
+  } else {
+    downloadFile('oropos-logbook.txt', db.log.map(l=>`${new Date(l.t).toLocaleString('el-GR')} — ${l.kind}: ${l.msg}`).join('\n'), 'text/plain');
+  }
+}
+
+/* ===================== PWA (manifest + optional service worker) ===================== */
+function setupPwa(){
+  try{
+    const manifest = {
+      name:'OROPOS OPS C3 — ALL HAZARDS FINAL', short_name:'OPS C3', start_url:'.', display:'standalone',
+      background_color:'#061423', theme_color:'#061423',
+      icons:[{src:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23061423"/><text x="50" y="62" font-size="55" text-anchor="middle">🚒</text></svg>'), sizes:'100x100', type:'image/svg+xml'}]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+    const link = document.createElement('link'); link.rel='manifest'; link.href=URL.createObjectURL(blob);
+    document.head.appendChild(link);
+  }catch(e){}
+  if ('serviceWorker' in navigator){
+    try{
+      const swCode = `self.addEventListener('install', e=>self.skipWaiting());
+        self.addEventListener('activate', e=>self.clients.claim());
+        self.addEventListener('fetch', e=>{});`;
+      const swBlob = new Blob([swCode], {type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+    }catch(e){}
+  }
+}
+
+/* ===================== INIT ===================== */
+function init(){
+  fillRegionSelects();
+  renderBottomNav();
+  go('home');
+  setInterval(tickClock,1000); tickClock();
+  refreshConnectivity();
+  setInterval(refreshConnectivity, 60000);
+  computeAllRisk();
+  renderLog();
+  fillVehicleAssignSelect('');
+  checkLock();
+  setupPwa();
+  setTimeout(()=>loadWeather(false), 600);
+  setTimeout(()=>{scheduleAutoScan();refreshAllSources();}, 1800);
+  log('System','Εκκίνηση εφαρμογής OROPOS OPS C3 / ALL HAZARDS COMMAND CENTER — FINAL REAL DATA');
+}
+document.addEventListener('DOMContentLoaded', init);
+</script></body></html>
